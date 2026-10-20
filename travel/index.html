@@ -4023,14 +4023,20 @@ function renderPlaces(panel, key){
     more.textContent = '더 보기 · ' + nextWords;
     more.addEventListener('click', function(){
       more.disabled = true; more.textContent = '찾는 중…';
-      var keep = all.length;
+      var before = list.length;
       naverMore(cityName, kind, function(n, rest){
         var h = function(t){ var x=document.querySelector('#fp-'+key+' .prechint'); if(x) x.textContent=t; };
         if(n < 0){ more.disabled=false; more.textContent='다시 시도 · ' + nextWords; return; }
-        placeActive[key] = keep; placeTheme[key] = '전체'; state.filters[key] = []; save(); renderTiles(key);
-        h(n ? KINDWORD[kind]+' '+n+'곳을 더 찾았어요' : '새로 찾은 곳이 없어요 (이미 있거나 '+naverRadius()+'km 밖)' + (rest ? ' · 한 번 더 눌러 보세요' : ''));
-        var cards = document.querySelectorAll('#fp-'+key+' .placecard');
-        if(n && cards[keep]) cards[keep].scrollIntoView({block:'nearest', behavior:REDUCED?'auto':'smooth'});
+        /* 고른 테마·보고 있던 자리는 그대로 두고 목록만 늘린다 */
+        var ul0 = panel.querySelector('.placelist'), top0 = ul0 ? ul0.scrollTop : 0, win0 = window.scrollY;
+        renderTiles(key);
+        var ul1 = document.querySelector('#fp-'+key+' .placelist');
+        if(ul1) ul1.scrollTop = top0;
+        window.scrollTo(0, win0);
+        var shown = (ul1 ? ul1.children.length : before) - before;
+        h(!n ? '새로 찾은 곳이 없어요 (이미 있거나 '+naverRadius()+'km 밖)' + (rest ? ' · 한 번 더 눌러 보세요' : '')
+          : shown === n ? KINDWORD[kind]+' '+n+'곳을 목록 아래에 더 넣었어요'
+          : KINDWORD[kind]+' '+n+'곳을 더 찾았어요 · 지금 고른 #'+cur+'에 맞는 곳은 '+shown+'곳');
       });
     });
     panel.appendChild(more);
