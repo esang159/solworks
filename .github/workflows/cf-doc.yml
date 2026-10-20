@@ -1,0 +1,7 @@
+name: Cloudflare 안내 문서 받기 (임시)
+on: workflow_dispatch
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -sS -L https://developers.cloudflare.com/agent-setup/prompt.md
