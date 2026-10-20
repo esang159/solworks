@@ -15,10 +15,13 @@ export function toLogin() {
   location.replace(root.href + "?next=" + encodeURIComponent(next));
 }
 
-// 중계 서버(worker/)에 보낼 로그인 증표. 로그인 안 돼 있으면 null.
-window.solIdToken = () => getAuth(app).currentUser?.getIdToken() ?? Promise.resolve(null);
+// 중계 서버(worker/)에 보낼 로그인 증표. 로그인 확인이 끝날 때까지 기다렸다가 준다 (로그인 안 돼 있으면 null).
+let authed;
+const authReady = new Promise((res) => { authed = res; });
+window.solIdToken = () => authReady.then((u) => (u ? u.getIdToken() : null));
 
 onAuthStateChanged(getAuth(app), (u) => {
+  authed(u);
   if (u) {
     window.solGuardOk = true;
     document.documentElement.classList.remove("sol-guard");
