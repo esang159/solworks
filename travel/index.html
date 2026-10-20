@@ -395,6 +395,9 @@
   .placebar .prec, .placebar .pclear, .pfind button{white-space:nowrap}
   .placebar .prechint:empty{display:none}
   .placebar .prechint{order:9; flex-basis:100%}
+  .pmore{display:block; width:100%; margin-top:10px; padding:10px; font-size:13px; font-weight:600; color:var(--ink-2); background:#fff; border:1px dashed var(--line-2); border-radius:10px}
+  .pmore:hover:not(:disabled){border-color:var(--hue); color:var(--hue)}
+  .pmore:disabled{opacity:.6}
   .pfind{display:inline-flex; border:1px solid var(--line-2); border-radius:8px; overflow:hidden; background:#fff}
   .pfind input{border:0; padding:5px 9px; font-size:12.5px; width:200px; min-width:0; background:transparent; color:var(--ink)}
   .pfind input:focus{outline:none}
@@ -4009,6 +4012,27 @@ function renderPlaces(panel, key){
   wrap.appendChild(mapBox);
   panel.appendChild(wrap);
   redrawMap();
+
+  /* 네이버에서 더 찾기 */
+  var nst = naverStore(cityName)[kind], nextAt = (nst && nst.next) || NAVER_STEP;
+  if(TRIP && nextAt < NAVER_Q[kind].length){
+    var more=el('button','pmore'); more.type='button';
+    var nextWords = NAVER_Q[kind].slice(nextAt, nextAt + NAVER_STEP).join(' · ');
+    more.textContent = '더 보기 · ' + nextWords;
+    more.addEventListener('click', function(){
+      more.disabled = true; more.textContent = '찾는 중…';
+      var keep = all.length;
+      naverMore(cityName, kind, function(n, rest){
+        var h = function(t){ var x=document.querySelector('#fp-'+key+' .prechint'); if(x) x.textContent=t; };
+        if(n < 0){ more.disabled=false; more.textContent='다시 시도 · ' + nextWords; return; }
+        placeActive[key] = keep; placeTheme[key] = '전체'; state.filters[key] = []; save(); renderTiles(key);
+        h(n ? KINDWORD[kind]+' '+n+'곳을 더 찾았어요' : '새로 찾은 곳이 없어요 (이미 있거나 '+naverRadius()+'km 밖)' + (rest ? ' · 한 번 더 눌러 보세요' : ''));
+        var cards = document.querySelectorAll('#fp-'+key+' .placecard');
+        if(n && cards[keep]) cards[keep].scrollIntoView({block:'nearest', behavior:REDUCED?'auto':'smooth'});
+      });
+    });
+    panel.appendChild(more);
+  }
 }
 var MOVE_SLOTS = [6*60, 7*60+20, 8*60+40, 10*60, 11*60+30, 13*60+20, 15*60+10, 17*60, 19*60+20];
 function moveKey(){ return (TRIP? (TRIP.q.from+'>'+TRIP.cityName) : ''); }
@@ -4991,7 +5015,14 @@ function naverSearch(q, done, fail){
 /* ── 목적지를 고르면 관광지·음식점·숙소 탭 목록에 네이버 장소를 자동으로 채운다 ──
    도시·종류마다 두 번씩 찾아서(각 5곳) 도시 중심에서 정한 반경(기본 30km) 안의 곳만, 이미 있는 이름은 빼고 넣는다.
    한 번 찾은 결과는 state.naver 에 저장해서 다시 열 때 또 부르지 않는다. */
-var NAVER_Q = {spot:['가볼만한곳','관광명소'], food:['맛집','카페'], stay:['호텔','펜션']};
+/* 네이버 지역 검색은 검색어 하나에 5곳까지만 주고 다음 페이지도 없다(직접 확인).
+   그래서 처음엔 앞의 두 검색어로 채우고, [더 보기]를 누를 때마다 다음 검색어 두 개로 더 찾는다. */
+var NAVER_Q = {
+  spot:['가볼만한곳','관광명소','명소','공원','박물관','전망대','체험','산책','데이트','아이와 가볼만한곳','사진 명소','시장'],
+  food:['맛집','카페','현지인 맛집','한식','고기','국수','해산물','브런치','디저트','분식','술집','빵집'],
+  stay:['호텔','펜션','리조트','게스트하우스','한옥스테이','글램핑','모텔','풀빌라']
+};
+var NAVER_STEP = 2;
 var RADIUS_OPTS = [5, 10, 20, 30, 50, 80];
 function naverRadius(){ return state.radius || 30; }
 var NAVER_DEF = {food:15000, stay:120000};
@@ -5049,6 +5080,27 @@ function naverMergeSaved(cityName, kind){
   mergePlaces(cityName, kind, st[kind].items, false, naverRadius());
   mergePlaces(cityName, kind, (st[kind].found || []).slice().reverse(), true, naverRadius());
 }
+/* [더 보기]: 다음 검색어들로 더 찾아 목록 뒤에 넣는다. done(새로 들어간 수, 남은 검색어 수) */
+function naverMore(cityName, kind, done){
+  var st = naverStore(cityName), at = (st[kind] && st[kind].next) || NAVER_STEP;
+  var words = NAVER_Q[kind].slice(at, at + NAVER_STEP);
+  if(!words.length) return done(0, 0);
+  var got = [], left = words.length, failed = 0;
+  words.forEach(function(w){
+    naverSearch(cityName + ' ' + w, function(items){
+      items.forEach(function(p){ got.push(toPlace(p, kind)); });
+      if(--left === 0) finish();
+    }, function(){ failed++; if(--left === 0) finish(); });
+  });
+  function finish(){
+    if(failed === words.length) return done(-1, NAVER_Q[kind].length - at);   /* 전부 실패: 다음에 같은 검색어로 다시 */
+    if(!st[kind]) st[kind] = {items: [], found: [], at: Date.now(), auto: true};
+    st[kind].items = st[kind].items.concat(got);
+    st[kind].next = at + words.length;
+    save();
+    done(mergePlaces(cityName, kind, got, false, naverRadius()), NAVER_Q[kind].length - st[kind].next);
+  }
+}
 /* 반경을 바꾸면 그 도시의 네이버 장소를 빼고 새 반경으로 다시 넣는다 (원래 있던 추천 장소는 그대로) */
 function setRadius(cityName, km){
   state.radius = km; save();
@@ -5069,7 +5121,7 @@ function ensureNaver(cityName, kind, key){
   if(naverBusy[bk]) return true;
   if(naverFailAt[bk] && Date.now() - naverFailAt[bk] < 60000) return false;
   naverBusy[bk] = true;
-  var qs = NAVER_Q[kind].map(function(w){ return cityName + ' ' + w; }), got = [], left = qs.length, failed = false;
+  var qs = NAVER_Q[kind].slice(0, NAVER_STEP).map(function(w){ return cityName + ' ' + w; }), got = [], left = qs.length, failed = false;
   qs.forEach(function(q){
     naverSearch(q, function(items){
       items.forEach(function(p){ got.push(toPlace(p, kind)); });
@@ -5083,7 +5135,7 @@ function ensureNaver(cityName, kind, key){
       if(TRIP && TRIP.cityName === cityName && document.getElementById('fp-'+key)) renderTiles(key);
       return;
     }
-    st[kind] = {items: got, found: (st[kind] && st[kind].found) || [], at: Date.now(), auto: true};
+    st[kind] = {items: got, found: (st[kind] && st[kind].found) || [], at: Date.now(), auto: true, next: NAVER_STEP};
     save();
     naverMerged[cityName + '|' + kind] = true;
     mergePlaces(cityName, kind, got, false, naverRadius());
