@@ -5,6 +5,8 @@
 //   GET /health                    살아 있는지 (로그인 불필요)
 //   매일 08:47 KST                 사업공고 수집 워크플로 실행 (wrangler.toml [triggers], 비밀 값 GH_TOKEN)
 //   GET /naver/local?q=춘천역 맛집   네이버 지역 검색 → {items:[{name, category, address, road, lat, lng, link}]}
+//   GET /odsay/path?sx=&sy=&ex=&ey=  ODsay 대중교통 길찾기 (응답 그대로). 키(ODSAY_KEY)는 사이트 주소로 잠긴
+//                                    웹 키라 사이트 주소를 Referer 로 붙여 부른다 (GitHub 에서 확인)
 
 const json = (body, status, cors) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", ...cors } });
@@ -84,7 +86,7 @@ export default {
     if (req.method !== "GET") return json({ error: "method" }, 405, cors);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, naver: Boolean(env.NAVER_ID && env.NAVER_SECRET), github: Boolean(env.GH_TOKEN) }, 200, cors);
+      return json({ ok: true, naver: Boolean(env.NAVER_ID && env.NAVER_SECRET), odsay: Boolean(env.ODSAY_KEY), github: Boolean(env.GH_TOKEN) }, 200, cors);
     }
 
     if (url.pathname === "/naver/local") {
@@ -94,6 +96,17 @@ export default {
       if (!q) return json({ error: "query" }, 400, cors);
       const out = await naverLocal(q, env);
       return json(out.body, out.status, cors);
+    }
+
+    if (url.pathname === "/odsay/path") {
+      if (!(await userOf(req, env))) return json({ error: "login" }, 401, cors);
+      if (!env.ODSAY_KEY) return json({ error: "no_key" }, 503, cors);
+      const n = (k) => { const v = Number(url.searchParams.get(k)); return Number.isFinite(v) ? v : null; };
+      const sx = n("sx"), sy = n("sy"), ex = n("ex"), ey = n("ey");
+      if ([sx, sy, ex, ey].some((v) => v === null)) return json({ error: "query" }, 400, cors);
+      const u = `https://api.odsay.com/v1/api/searchPubTransPathT?SX=${sx}&SY=${sy}&EX=${ex}&EY=${ey}&OPT=0&SearchType=0&apiKey=${encodeURIComponent(env.ODSAY_KEY)}`;
+      const r = await fetch(u, { headers: { referer: "https://www.solworks.store/travel/", origin: "https://www.solworks.store" } });
+      return new Response(await r.text(), { status: r.ok ? 200 : 502, headers: { "content-type": "application/json; charset=utf-8", ...cors } });
     }
 
     return json({ error: "not_found" }, 404, cors);
