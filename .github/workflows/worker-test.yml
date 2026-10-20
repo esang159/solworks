@@ -19,8 +19,13 @@ jobs:
         run: |
           [ -n "$NAVER_ID" ] && echo "NAVER_ID 있음 (${#NAVER_ID}자)" || echo "NAVER_ID 없음"
           [ -n "$NAVER_SECRET" ] && echo "NAVER_SECRET 있음 (${#NAVER_SECRET}자)" || echo "NAVER_SECRET 없음"
-          curl -sS -w "\nHTTP %{http_code}\n" "https://openapi.naver.com/v1/search/local.json?query=%EC%B6%98%EC%B2%9C%EC%97%AD%20%EB%A7%9B%EC%A7%91&display=5" \
-            -H "X-Naver-Client-Id: $NAVER_ID" -H "X-Naver-Client-Secret: $NAVER_SECRET" | head -c 1500; echo
+          q="query=%EC%B6%98%EC%B2%9C%EC%97%AD%20%EB%A7%9B%EC%A7%91&display=5"
+          echo "== NAVER API HUB"
+          curl -sS -w "\nHTTP %{http_code}\n" "https://naverapihub.apigw.ntruss.com/search/v1/local?$q" \
+            -H "X-NCP-APIGW-API-KEY-ID: $NAVER_ID" -H "X-NCP-APIGW-API-KEY: $NAVER_SECRET" | head -c 1500; echo
+          echo "== 예전 개발자센터"
+          curl -sS -w "\nHTTP %{http_code}\n" "https://openapi.naver.com/v1/search/local.json?$q" \
+            -H "X-Naver-Client-Id: $NAVER_ID" -H "X-Naver-Client-Secret: $NAVER_SECRET" | head -c 300; echo
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

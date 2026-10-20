@@ -45,12 +45,22 @@ async function userOf(req, env) {
 
 const strip = (s) => String(s || "").replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"');
 
+// NAVER API HUB(2026년 8월부터 새 키는 여기서 발급) 먼저, 안 되면 예전 개발자센터 방식으로.
+const NAVER_LOCAL = [
+  { url: "https://naverapihub.apigw.ntruss.com/search/v1/local", id: "X-NCP-APIGW-API-KEY-ID", secret: "X-NCP-APIGW-API-KEY" },
+  { url: "https://openapi.naver.com/v1/search/local.json", id: "X-Naver-Client-Id", secret: "X-Naver-Client-Secret" },
+];
+
 async function naverLocal(q, env) {
-  const u = new URL("https://openapi.naver.com/v1/search/local.json");
-  u.searchParams.set("query", q);
-  u.searchParams.set("display", "5");
-  const r = await fetch(u, { headers: { "X-Naver-Client-Id": env.NAVER_ID, "X-Naver-Client-Secret": env.NAVER_SECRET } });
-  if (!r.ok) return { status: r.status === 401 ? 502 : r.status, body: { error: "naver", status: r.status } };
+  let r;
+  for (const ep of NAVER_LOCAL) {
+    const u = new URL(ep.url);
+    u.searchParams.set("query", q);
+    u.searchParams.set("display", "5");
+    r = await fetch(u, { headers: { [ep.id]: env.NAVER_ID, [ep.secret]: env.NAVER_SECRET } });
+    if (r.status !== 401 && r.status !== 403) break;
+  }
+  if (!r.ok) return { status: 502, body: { error: "naver", status: r.status } };
   const data = await r.json();
   const items = (data.items || []).map((it) => ({
     name: strip(it.title),
