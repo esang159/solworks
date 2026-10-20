@@ -1,0 +1,11 @@
+# 사이트가 브라우저에서 직접 못 부르는 API(키를 숨겨야 하거나 브라우저 호출을 막는 곳)를 대신 불러 주는 중계 서버.
+# .github/workflows/worker.yml 이 GitHub에 올라온 이 폴더를 Cloudflare에 배포한다.
+name = "solworks-relay"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[vars]
+# Firebase 웹 설정값(공개용). 로그인 증표 확인에만 쓴다.
+FIREBASE_API_KEY = "AIzaSyAFCCWL4yFJ0_B63jlVxmMucj2XNZfr5Hs"
+ALLOWED_ORIGINS = "https://www.solworks.store,https://solworks.store"

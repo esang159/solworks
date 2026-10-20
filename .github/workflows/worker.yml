@@ -1,0 +1,57 @@
+name: 중계 서버 배포 (Cloudflare)
+
+# worker/ 폴더가 바뀌면 Cloudflare Workers(solworks-relay)에 배포하고, 살아 있는지 확인한다.
+# 필요한 Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+# 있으면 같이 넣는 Secrets: NAVER_ID, NAVER_SECRET
+on:
+  push:
+    paths:
+      - "worker/**"
+      - ".github/workflows/worker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: worker
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: 배포
+        id: deploy
+        run: |
+          npx --yes wrangler@4 deploy 2>&1 | tee deploy.log
+          url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+      - name: 비밀 값 넣기 (있는 것만)
+        env:
+          NAVER_ID: ${{ secrets.NAVER_ID }}
+          NAVER_SECRET: ${{ secrets.NAVER_SECRET }}
+        run: |
+          for k in NAVER_ID NAVER_SECRET; do
+            if [ -n "${!k}" ]; then printf '%s' "${!k}" | npx --yes wrangler@4 secret put "$k" >/dev/null && echo "$k 넣음"; else echo "$k 없음 (건너뜀)"; fi
+          done
+      - name: 확인
+        run: |
+          u="${{ steps.deploy.outputs.url }}"
+          echo "주소: $u"
+          sleep 5
+          echo "== /health"; curl -sS "$u/health"; echo
+          echo "== 로그인 없이 검색 (401이어야 함)"; curl -sS -o /dev/null -w "%{http_code}\n" "$u/naver/local?q=test"
+          echo "== 허용 안 된 곳에서 (CORS 헤더 없어야 함)"; curl -sS -D - -o /dev/null "$u/health" -H "Origin: https://evil.example" | grep -i access-control || echo "없음"
+          echo "== 우리 사이트에서 (CORS 헤더 있어야 함)"; curl -sS -D - -o /dev/null "$u/health" -H "Origin: https://www.solworks.store" | grep -i access-control-allow-origin
