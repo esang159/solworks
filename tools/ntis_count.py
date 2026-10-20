@@ -32,17 +32,27 @@ def get(url: str, tries: int = 3) -> str:
 
 
 def form_info() -> None:
+    """목록 화면의 검색 양식·폼 주소·엑셀 다운로드 함수를 찾는다 (연결된 js 파일까지)."""
     html = get(crawl.NTIS_LIST)
     print("===== 목록 화면 검색 양식 =====")
+    for m in re.finditer(r"<form[^>]*>", html):
+        print("  폼:", m.group(0)[:200])
     for m in re.finditer(r"<(select|input)[^>]*name=\"([^\"]+)\"[^>]*>", html):
-        print("  필드:", m.group(1), m.group(2))
+        print("  필드:", re.sub(r"\s+", " ", m.group(0))[:160])
     for m in re.finditer(r"<select[^>]*name=\"([^\"]+)\"[^>]*>(.*?)</select>", html, re.S):
         opts = re.findall(r"<option[^>]*value=\"([^\"]*)\"[^>]*>([^<]*)<", m.group(2))
-        print(f"  선택 {m.group(1)}:", opts[:15])
-    for m in re.finditer(r"(?i)(excel|xls|down)[^\n]{0,200}", html):
-        s = re.sub(r"\s+", " ", m.group(0))
-        if "function" in s or ".do" in s or "onclick" in s:
-            print("  다운로드 단서:", s[:220])
+        print(f"  선택 {m.group(1)}:", opts[:20])
+    sources = [("목록 화면", html)]
+    for src in re.findall(r'<script[^>]+src="([^"]+)"', html):
+        if "jquery" in src.lower():
+            continue
+        js = get(urllib.parse.urljoin(crawl.NTIS_LIST, src), tries=1)
+        if re.search(r"(?i)excel|xls", js):
+            sources.append((src, js))
+    print("\n===== 엑셀 다운로드 단서 =====")
+    for name, t in sources:
+        for m in list(re.finditer(r"(?i)excel|xls", t))[:12]:
+            print(f"  [{name}]", re.sub(r"\s+", " ", t[max(0, m.start() - 250):m.end() + 250]))
 
 
 def full_scan(unit: int) -> None:
@@ -78,4 +88,5 @@ def full_scan(unit: int) -> None:
 
 if __name__ == "__main__":
     form_info()
-    full_scan(int(sys.argv[1]) if len(sys.argv) > 1 else 100)
+    if not (len(sys.argv) > 1 and sys.argv[1] == "form"):
+        full_scan(int(sys.argv[1]) if len(sys.argv) > 1 else 100)
