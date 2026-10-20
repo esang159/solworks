@@ -417,14 +417,8 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .note-text::placeholder { color: rgba(43, 38, 32, .45); }
 .note-time { font-size: 11px; opacity: .6; text-align: right; font-variant-numeric: tabular-nums; }
 .note-empty { grid-column: 1 / -1; padding: 30px 0; text-align: center; font-size: 14px; }
-/* 보드에서는 미리보기만, 누르면 큰 창 */
-.note-preview {
-  flex: 1; margin-top: 6px; min-height: 150px; max-height: 240px; overflow: hidden; cursor: pointer;
-  white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.6; color: var(--note-ink);
-  -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent);
-}
-.note-preview:focus-visible { outline: 2px solid var(--note-ink); outline-offset: 2px; border-radius: 4px; }
-.note-preview .ph { color: rgba(43, 38, 32, .45); }
+.note-acts { display: flex; align-items: center; gap: 2px; }
+.note-big { background: transparent; color: var(--note-ink); padding: 0 6px; font-size: 16px; line-height: 1; border-radius: 6px; }
 .note-dlg { width: min(760px, calc(100vw - 32px)); max-width: none; padding: 0; border: 0; background: transparent; overflow: visible; }
 .note-dlg::backdrop { background: rgba(0, 0, 0, .65); }
 .note.big { transform: none; min-height: min(70vh, 640px); padding: 14px 18px 12px; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
