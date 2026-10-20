@@ -17,6 +17,7 @@
   }, 15000);
 </script>
 <script type="module" src="../js/auth-guard.js?v=20261020n" onerror="window.solGuardFail()"></script>
+<script type="module" src="../js/travel-sync.js?v=20261020a"></script>
 <link rel="icon" href="../favicon.ico" sizes="any"><link rel="icon" type="image/png" href="../assets/favicon/favicon-32.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Nanum+Pen+Script&display=swap">
 <style>
@@ -2353,10 +2354,54 @@ try{
     if(pv.memos) state.memos = pv.memos;
     if(pv.naver) state.naver = pv.naver;
     if(pv.radius) state.radius = pv.radius;
+    if(pv.plan) state.plan = pv.plan;
+    if(pv.savedAt) state.savedAt = pv.savedAt;
   }}
 }catch(e){}
 Object.keys(FILTERS).forEach(function(k){ if(!state.filters[k]) state.filters[k] = FILTERS[k].preset.slice(); });
-function save(){ try{ localStorage.setItem('yeohaengnote-v3', JSON.stringify(state)); }catch(e){} }
+/* 페이지를 처음 그리는 동안의 저장은 '고친 것'이 아니므로 저장 시각을 바꾸지 않는다.
+   (안 그러면 새 기기에서 연 기본 일정이 클라우드의 실제 일정보다 최신으로 보인다) */
+var BOOTING = true;
+function save(){
+  if(!BOOTING) state.savedAt = Date.now();
+  try{ localStorage.setItem('yeohaengnote-v3', JSON.stringify(state)); }catch(e){}
+  if(!BOOTING && window.travelSync) window.travelSync.push(state);   /* 로그인돼 있으면 Firebase 에도 (../js/travel-sync.js) */
+}
+/* ── 지금 보고 있는 여행을 통째로 기억한다 ──
+   문장·고른 조건으로 다시 짜면 손으로 고친 일정(삭제·시간·추가·순서)이 사라지므로, 일정 자체를 저장해 두고
+   새로 열 때 그대로 되살린다. 새로 '일정 생성'을 누르면 그때의 일정으로 바뀐다. */
+function saveTrip(){
+  if(!TRIP) return;
+  state.plan = {
+    ask: ask.value, lock: LOCK, q: TRIP.q,
+    days: TRIP.days.map(function(d){
+      return {no: d.no, items: d.items.map(function(it){ var o = {}; for(var k in it) if(k !== 'hop') o[k] = it[k]; return o; })};
+    })
+  };
+  save();
+}
+function restorePlan(){
+  var P = state.plan;
+  if(!P || !P.q || !P.days) return false;
+  if(P.ask) ask.value = P.ask;
+  parseQuery(ask.value);   /* 준비된 데이터가 없는 도시는 여기서 만들어진다 */
+  if(!DB[P.q.city]) return false;
+  var trip = buildTrip(P.q);
+  if(!trip || trip.days.length !== P.days.length) return false;
+  var maxId = UID;
+  trip.days.forEach(function(d, i){
+    d.items = P.days[i].items;
+    d.items.forEach(function(it){ var n = parseInt(String(it.id || '').slice(1), 10); if(n > maxId) maxId = n; });
+  });
+  UID = maxId;   /* 새로 넣는 항목 번호가 되살린 것과 겹치지 않게 */
+  finalize(trip);
+  LOCK = P.lock || {};
+  showParsed(P.q);
+  state.people = P.q.people;
+  renderTrip(trip); syncSetup(P.q); syncFilters(P.q);
+  genBar.style.width = '100%'; genState.textContent = '저장해 둔 일정을 불러왔습니다';
+  return true;
+}
 /* 여행 메모 — 일정은 문장으로 매번 다시 짜지므로, 메모는 '도시·출발일·기간'을 열쇠로 따로 기억한다.
    일정별 메모는 그 안에서 '몇 일차·장소 이름'으로 찾는다. */
 function tripKey(){ return TRIP ? [TRIP.q.city, TRIP.q.date || '', TRIP.nights].join('|') : ''; }
@@ -3401,6 +3446,7 @@ function finalize(trip){
 function refresh(){
   if(!TRIP) return;
   finalize(TRIP);
+  saveTrip();
   var mc=document.getElementById('map-cart'); if(mc) buildMap(mc, {});
   var mh=document.getElementById('map-hero'); if(mh) buildMap(mh, {});
   var dc=document.getElementById('days-cart'); if(dc) buildDays(dc);
@@ -4577,6 +4623,7 @@ function renderTrip(trip){
   renderKeyBox();
   syncTripBar();
   recalc();
+  saveTrip();
 }
 
 var HICO={
@@ -5953,7 +6000,8 @@ PRODUCTS.forEach(function(p){
 });
 
 renderEvents();
-applyAsk(false);
+if(!restorePlan()) applyAsk(false);
+BOOTING = false;
 renderExplore();
 var initial=(location.hash||'').replace('#/','');
 go(VIEWS[initial]?initial:'home');
