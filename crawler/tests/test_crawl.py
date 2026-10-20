@@ -107,5 +107,23 @@ class MergeTest(unittest.TestCase):
         self.assertEqual(len(out), 3)
 
 
+
+class IrisTest(unittest.TestCase):
+    SAMPLE = {"listBsnsAncmBtinSitu": [{
+        "ancmId": "024477", "sorgnId": "10001", "rcveStrDe": "2026.10.16", "rcveEndDe": "2026.11.17", "dDay": 28,
+        "sorgnNm": "한국연구재단", "ancmTl": "2026년 한미 이공분야 학생인력교류 프로그램(NSF IRES) 운영지원사업 신규과제 공모",
+        "ancmNo": "과학기술정보통신부 공고 제2026-1007호", "blngGovdSeNm": "과학기술정보통신부", "ancmDe": "2026-10-16",
+        "pbofrTpSeNmLst": "자유공모", "rcveSttSeNmLst": "공고접수중", "rcveStt": "진행중"}],
+        "paginationInfo": {"totalPageCount": 2}}
+
+    def test_parse(self):
+        [it] = crawl.parse_iris(self.SAMPLE)
+        self.assertEqual(it["source"], "IRIS")
+        self.assertEqual(it["kind"], "연구과제")
+        self.assertEqual((it["start"], it["end"], it["posted"]), ("2026-10-16", "2026-11-17", "2026-10-16"))
+        self.assertEqual(it["org"], "과학기술정보통신부 · 한국연구재단")
+        self.assertEqual(it["category"], "국가R&D · 접수중")
+        self.assertIn("ancmId=024477", it["url"])
+
 if __name__ == "__main__":
     unittest.main()

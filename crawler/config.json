@@ -29,7 +29,16 @@
       "stop_after": 3,
       "delay": 0.5
     },
-    "rss": []
+    "rss": [],
+    "iris": {
+      "enabled": true,
+      "progress": [
+        "ancmIng",
+        "ancmPre"
+      ],
+      "max_pages": 30,
+      "delay": 0.3
+    }
   },
   "open_ended_days": 120
 }

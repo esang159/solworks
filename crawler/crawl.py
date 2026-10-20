@@ -389,6 +389,80 @@ def fetch_ntis(cfg: dict) -> list[dict]:
     return items
 
 
+# ---------------------------------------------------------------- IRIS 사업공고
+# 범부처통합연구지원시스템(IRIS)의 공고 목록. NTIS 통합공고에 늦게 넘어가거나 안 넘어가는 공고가 있어서 따로 읽는다.
+# 화면이 쓰는 목록 데이터 주소를 그대로 부르면 JSON 으로 온다 (키 불필요).
+
+IRIS_BASE = "https://www.iris.go.kr"
+IRIS_LIST = IRIS_BASE + "/contents/retrieveBsnsAncmBtinSituList.do"
+IRIS_LIST_VIEW = IRIS_BASE + "/contents/retrieveBsnsAncmBtinSituListView.do"
+IRIS_VIEW = IRIS_BASE + "/contents/retrieveBsnsAncmView.do"   # 상세 화면 (?ancmId=...)
+
+
+def http_post(url: str, data: dict, retries: int = 1) -> bytes:
+    body = urllib.parse.urlencode(data).encode()
+    for attempt in range(retries + 1):
+        try:
+            req = urllib.request.Request(url, data=body, method="POST", headers={
+                "User-Agent": USER_AGENT, "X-Requested-With": "XMLHttpRequest", "Referer": IRIS_LIST_VIEW})
+            with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+                return resp.read()
+        except Exception:
+            if attempt == retries:
+                raise
+            time.sleep(2 ** (attempt + 1))
+
+
+def parse_iris(data: dict, prg: str = "ancmIng") -> list[dict]:
+    """IRIS 목록 JSON 한 쪽을 공고 목록으로."""
+    items = []
+    for r in data.get("listBsnsAncmBtinSitu") or []:
+        aid, title = str(r.get("ancmId") or ""), clean(r.get("ancmTl") or "")
+        if not aid or not title:
+            continue
+        status = clean(r.get("rcveSttSeNmLst") or r.get("rcveStt") or "")
+        ministry = clean(r.get("blngGovdSeNm") or "")
+        items.append({
+            "id": make_id("iris", aid),
+            "source": "IRIS",
+            "kind": "연구과제",
+            "title": title,
+            "org": " · ".join(x for x in [ministry, clean(r.get("sorgnNm") or "")] if x),
+            "category": "국가R&D" + (f" · {status.replace('공고', '')}" if status else ""),
+            "start": parse_date(r.get("rcveStrDe")),
+            "end": parse_date(r.get("rcveEndDe")),
+            "posted": parse_date(r.get("ancmDe")),
+            "url": f"{IRIS_VIEW}?" + urllib.parse.urlencode({"ancmId": aid, "ancmPrg": prg}),
+            "summary": "",
+            "target": "",
+            "regions": detect_regions(title),
+            "age": "",
+            "how": clean(r.get("pbofrTpSeNmLst") or ""),
+            "contact": "",
+        })
+    return items
+
+
+def fetch_iris(cfg: dict) -> list[dict]:
+    """접수 중(ancmIng)·접수 예정(ancmPre) 공고를 쪽마다 넘겨 모은다."""
+    items, seen = [], set()
+    for prg in cfg.get("progress", ["ancmIng", "ancmPre"]):
+        page, pages = 1, 1
+        while page <= pages and page <= cfg.get("max_pages", 30):
+            raw = http_post(IRIS_LIST, {"pageIndex": str(page), "ancmPrg": prg}, retries=2)
+            data = json.loads(raw.decode("utf-8", "replace"))
+            pages = int((data.get("paginationInfo") or {}).get("totalPageCount") or 1)
+            for it in parse_iris(data, prg):
+                if it["id"] not in seen:
+                    seen.add(it["id"])
+                    items.append(it)
+            page += 1
+            time.sleep(cfg.get("delay", 0.3))
+        print(f"[iris] {prg}: {pages}쪽 확인")
+    print(f"[iris] {len(items)}건")
+    return items
+
+
 # ---------------------------------------------------------------- 병합
 
 def match_keywords(item: dict, keywords: list[str]) -> list[str]:
@@ -504,6 +578,9 @@ def main() -> int:
     if src.get("ntis", {}).get("enabled", True):
         ntis_cfg = dict(src.get("ntis", {}))
         jobs.append(("ntis", lambda: fetch_ntis(ntis_cfg)))
+    if src.get("iris", {}).get("enabled", True):
+        iris_cfg = dict(src.get("iris", {}))
+        jobs.append(("iris", lambda: fetch_iris(iris_cfg)))
     for feed in src.get("rss", []):
         jobs.append((f"rss:{feed.get('name')}", lambda feed=feed: fetch_rss(feed)))
 
