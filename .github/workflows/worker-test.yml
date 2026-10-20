@@ -1,0 +1,48 @@
+name: 중계 서버 점검
+
+# 로그인한 사람처럼 중계 서버를 실제로 불러 본다.
+# 1) 네이버를 키로 직접 불러 키가 맞는지  2) 테스트용 로그인 증표를 만들어 중계 서버로 검색
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 네이버 키 직접 확인
+        env:
+          NAVER_ID: ${{ secrets.NAVER_ID }}
+          NAVER_SECRET: ${{ secrets.NAVER_SECRET }}
+        run: |
+          [ -n "$NAVER_ID" ] && echo "NAVER_ID 있음 (${#NAVER_ID}자)" || echo "NAVER_ID 없음"
+          [ -n "$NAVER_SECRET" ] && echo "NAVER_SECRET 있음 (${#NAVER_SECRET}자)" || echo "NAVER_SECRET 없음"
+          curl -sS -w "\nHTTP %{http_code}\n" "https://openapi.naver.com/v1/search/local.json?query=%EC%B6%98%EC%B2%9C%EC%97%AD%20%EB%A7%9B%EC%A7%91&display=5" \
+            -H "X-Naver-Client-Id: $NAVER_ID" -H "X-Naver-Client-Secret: $NAVER_SECRET" | head -c 1500; echo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 로그인한 것처럼 중계 서버로 검색
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          pip install --quiet firebase-admin requests
+          python - <<'PY'
+          import json, os, requests, firebase_admin
+          from firebase_admin import auth, credentials
+          firebase_admin.initialize_app(credentials.Certificate(json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])))
+          # 실제 계정이 아닌 점검 전용 uid
+          ct = auth.create_custom_token("relay-check").decode()
+          key = "AIzaSyAFCCWL4yFJ0_B63jlVxmMucj2XNZfr5Hs"
+          r = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={key}", json={"token": ct, "returnSecureToken": True}, timeout=20)
+          print("로그인 증표:", r.status_code)
+          tok = r.json().get("idToken")
+          base = "https://solworks-relay.minsol2003.workers.dev"
+          print("health:", requests.get(base + "/health", timeout=20).text)
+          for q in ["춘천역 맛집", "경복궁"]:
+              s = requests.get(base + "/naver/local", params={"q": q}, headers={"Authorization": "Bearer " + tok, "Origin": "https://www.solworks.store"}, timeout=20)
+              print(f"[{q}] HTTP {s.status_code} CORS={s.headers.get('access-control-allow-origin')}")
+              print(json.dumps(s.json(), ensure_ascii=False, indent=1)[:1500])
+          PY
