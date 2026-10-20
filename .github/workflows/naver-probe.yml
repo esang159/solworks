@@ -1,0 +1,15 @@
+name: 네이버 지역검색 확인 (임시)
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 브라우저에서 직접 부를 수 있는지(CORS) · 키 없이 응답
+        run: |
+          U="https://openapi.naver.com/v1/search/local.json?query=%EC%B6%98%EC%B2%9C%EC%97%AD%20%EB%A7%9B%EC%A7%91&display=5"
+          echo "== OPTIONS (preflight)"
+          curl -s -i -X OPTIONS "$U" -H "Origin: https://www.solworks.store" -H "Access-Control-Request-Method: GET" -H "Access-Control-Request-Headers: x-naver-client-id,x-naver-client-secret" | head -20
+          echo; echo "== GET (키 없음)"
+          curl -s -i "$U" -H "Origin: https://www.solworks.store" | head -25
+          echo; echo "== GET (가짜 키)"
+          curl -s -i "$U" -H "Origin: https://www.solworks.store" -H "X-Naver-Client-Id: test" -H "X-Naver-Client-Secret: test" | head -25
