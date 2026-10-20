@@ -15,6 +15,9 @@ export function toLogin() {
   location.replace(root.href + "?next=" + encodeURIComponent(next));
 }
 
+// 중계 서버(worker/)에 보낼 로그인 증표. 로그인 안 돼 있으면 null.
+window.solIdToken = () => getAuth(app).currentUser?.getIdToken() ?? Promise.resolve(null);
+
 onAuthStateChanged(getAuth(app), (u) => {
   if (u) {
     window.solGuardOk = true;

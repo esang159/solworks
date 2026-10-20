@@ -16,7 +16,7 @@
     document.body.appendChild(d);
   }, 15000);
 </script>
-<script type="module" src="../js/auth-guard.js?v=20261015s" onerror="window.solGuardFail()"></script>
+<script type="module" src="../js/auth-guard.js?v=20261020n" onerror="window.solGuardFail()"></script>
 <link rel="icon" href="../favicon.ico" sizes="any"><link rel="icon" type="image/png" href="../assets/favicon/favicon-32.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Nanum+Pen+Script&display=swap">
 <style>
@@ -240,6 +240,9 @@
   .ps-row .pa button.done{background:var(--ok)}
   .ps-more{display:block; width:100%; padding:9px; font-size:12.5px; color:var(--ink-2); background:var(--card-2)}
   .ps-msg{padding:12px; font-size:12.5px; color:var(--ink-3); line-height:1.6}
+  .ps-src{display:inline-flex; border:1px solid var(--line-2); border-radius:7px; overflow:hidden}
+  .ps-src button{font-size:12px; padding:3px 10px; background:#fff; color:var(--ink-2)}
+  .ps-src button.on{background:var(--ink); color:#fff; font-weight:700}
   .ps-msg b{color:var(--ink-2)}
   #adddlg .psearch{margin:4px 0 12px}
   .askhint b{color:var(--ink-2); font-weight:600}
@@ -4884,10 +4887,46 @@ function openAdd(dayNo){
   dlg.showModal();
 }
 
-/* ═══ 장소 찾기 (카카오 장소 검색) ═══
+/* ═══ 장소 찾기 (네이버 · 카카오 장소 검색) ═══
    "춘천역 근처 맛집", "춘천 아이와 갈만한 곳"처럼 쓰면 실제 가게·관광지 목록을 보여주고, 골라서 일정에 넣는다.
-   카카오 지도 JavaScript SDK 의 장소 검색을 쓴다. 키는 카카오 디벨로퍼스 > 앱 키 > JavaScript 키이고,
-   플랫폼 > Web 에 이 사이트 주소가 등록돼 있어야 동작한다 (공개용 키라 페이지에 넣어도 된다). */
+   - 네이버: 브라우저에서 직접 못 불러서 우리 중계 서버(worker/, Cloudflare)를 거친다. 로그인 증표를 같이 보낸다.
+   - 카카오: 지도 JavaScript SDK 의 장소 검색. 키는 카카오 디벨로퍼스 > 앱 키 > JavaScript 키이고,
+     플랫폼 > Web 에 이 사이트 주소가 등록돼 있어야 동작한다 (공개용 키라 페이지에 넣어도 된다). 키가 있을 때만 탭이 생긴다. */
+var RELAY = 'https://solworks-relay.minsol2003.workers.dev';
+/* 네이버 분류("한식>막국수", "여행,명소>궁궐") → 카카오 분류 코드 */
+function naverGroup(cat){
+  if(/카페|디저트|베이커리/.test(cat)) return 'CE7';
+  if(/숙박|호텔|펜션|모텔|리조트|게스트하우스|캠핑/.test(cat)) return 'AD5';
+  if(/박물관|미술관|전시|공연|극장|도서관|문화/.test(cat)) return 'CT1';
+  if(/여행|명소|관광|궁궐|공원|해수욕장|유원지|테마파크|산|계곡|폭포|전망/.test(cat)) return 'AT4';
+  if(/주차/.test(cat)) return 'PK6';
+  if(/지하철|역$/.test(cat)) return 'SW8';
+  if(/음식|한식|일식|중식|양식|분식|고기|육류|해물|생선|술집|요리|치킨|피자|국수|냉면|뷔페|레스토랑|식당/.test(cat)) return 'FD6';
+  return '';
+}
+/* 중계 서버 결과를 카카오 결과 모양으로 맞춘다 (아래 화면·일정 추가 코드를 같이 쓰려고) */
+function fromNaver(it){
+  var road = it.road || '', addr = it.address || '';
+  return {
+    place_name: it.name, category_name: (it.category || '').split('>').join(' > '),
+    category_group_code: naverGroup(it.category || ''),
+    address_name: addr, road_address_name: road, phone: '',
+    x: it.lng, y: it.lat, src: 'naver',
+    place_url: 'https://map.naver.com/p/search/' + encodeURIComponent(it.name + ' ' + (road || addr).split(' ').slice(0, 3).join(' '))
+  };
+}
+function naverSearch(q, done, fail){
+  var tk = window.solIdToken ? window.solIdToken() : Promise.resolve(null);
+  tk.then(function(t){
+    if(!t) return fail('login');
+    return fetch(RELAY + '/naver/local?q=' + encodeURIComponent(q), {headers: {Authorization: 'Bearer ' + t}})
+      .then(function(r){ return r.json().then(function(j){ return {ok: r.ok, status: r.status, j: j}; }); })
+      .then(function(o){
+        if(!o.ok) return fail(o.status === 401 ? 'login' : o.j && o.j.error === 'no_key' ? 'nokey' : 'fail');
+        done((o.j.items || []).map(fromNaver));
+      });
+  }).catch(function(){ fail('net'); });
+}
 var KAKAO_JS_KEY = '';
 function kakaoKey(){ try{ return localStorage.getItem('kakao-js-key') || KAKAO_JS_KEY; }catch(e){ return KAKAO_JS_KEY; } }
 var KAKAO_WAIT = null;
@@ -4934,6 +4973,7 @@ function addPlace(dayNo, p){
 function placeSearch(box, fixedDay){
   var input = box.querySelector('.ps-q'), go = box.querySelector('.ps-go'), res = box.querySelector('.ps-res');
   var cur = {q:'', page:1, items:[], end:true};
+  var src = 'naver';   // 카카오 키가 있으면 탭으로 바꿀 수 있다
   function dayPicker(){
     if(fixedDay) return '<span>' + fixedDay + '일차에 넣어요</span>';
     if(!TRIP || !TRIP.days.length) return '';
@@ -4943,7 +4983,9 @@ function placeSearch(box, fixedDay){
   function draw(msg){
     res.hidden = false;
     if(msg){ res.innerHTML = '<p class="ps-msg">' + msg + '</p>'; return; }
-    var head = '<div class="ps-head"><span>\u201c<b>' + escHtml(cur.q) + '</b>\u201d ' + cur.items.length + '곳' +
+    var tabs = kakaoKey() ? '<span class="ps-src">' + [['naver','네이버'],['kakao','카카오']].map(function(t){
+      return '<button type="button" data-src="' + t[0] + '"' + (t[0] === src ? ' class="on"' : '') + '>' + t[1] + '</button>'; }).join('') + '</span>' : '';
+    var head = '<div class="ps-head">' + tabs + '<span>\u201c<b>' + escHtml(cur.q) + '</b>\u201d ' + cur.items.length + '곳' +
                (cur.end ? '' : ' 이상') + '</span>' + dayPicker() + '</div>';
     var rows = cur.items.map(function(p, i){
       var k = placeKind(p), addr = p.road_address_name || p.address_name || '';
@@ -4952,7 +4994,7 @@ function placeSearch(box, fixedDay){
         '<small>' + escHtml((p.category_name || '').replace(/ > /g, ' · ')) + '</small>' +
         '<small>' + escHtml(addr) + (p.phone ? ' · ' + escHtml(p.phone) : '') + '</small></div>' +
         '<div class="pa"><button type="button" data-i="' + i + '">일정에 추가</button>' +
-        (p.place_url ? '<a href="' + escHtml(p.place_url) + '" target="_blank" rel="noopener">카카오맵 ›</a>' : '') + '</div></li>';
+        (p.place_url ? '<a href="' + escHtml(p.place_url) + '" target="_blank" rel="noopener">' + (p.src === 'naver' ? '네이버지도' : '카카오맵') + ' ›</a>' : '') + '</div></li>';
     }).join('');
     res.innerHTML = head + '<ul class="ps-list">' + (rows || '<li class="ps-msg">찾은 곳이 없어요. 지역 이름을 넣어 다시 찾아보세요 (예: 춘천 닭갈비).</li>') + '</ul>' +
       (cur.end ? '' : '<button type="button" class="ps-more">더 보기</button>');
@@ -4961,6 +5003,14 @@ function placeSearch(box, fixedDay){
     var q = input.value.trim();
     if(!q) return;
     if(page === 1){ cur = {q:q, page:1, items:[], end:true}; draw('찾는 중…'); }
+    if(src === 'naver'){
+      naverSearch(q, function(items){ cur.items = items; cur.end = true; draw(); }, function(why){
+        draw(why === 'login' ? '로그인이 풀렸어요. 새로고침해서 다시 로그인해 주세요.'
+           : why === 'nokey' ? '네이버 검색 키가 아직 준비되지 않았어요.'
+           : '네이버 장소 검색에 실패했어요. 잠시 뒤 다시 해 주세요.');
+      });
+      return;
+    }
     loadKakao(function(){
       new kakao.maps.services.Places().keywordSearch(q, function(data, status, pg){
         if(status === kakao.maps.services.Status.ERROR) return draw('장소 검색에 실패했어요. 잠시 뒤 다시 해 주세요.');
@@ -4979,6 +5029,8 @@ function placeSearch(box, fixedDay){
   input.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); run(1); } });
   res.addEventListener('click', function(e){
     if(e.target.closest('.ps-more')){ run(cur.page + 1); return; }
+    var t = e.target.closest('button[data-src]');
+    if(t){ src = t.dataset.src; run(1); return; }
     var b = e.target.closest('button[data-i]');
     if(!b) return;
     var p = cur.items[+b.dataset.i];
