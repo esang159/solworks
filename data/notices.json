@@ -1,5 +1,5 @@
 {
- "updated_at": "2026-10-20T11:47:51+09:00",
+ "updated_at": "2026-10-20T11:54:37+09:00",
  "keywords": [
   "창업",
   "R&D",
@@ -10,9 +10,7 @@
   "바우처",
   "스마트"
  ],
- "errors": [
-  "iris: <urlopen error timed out>"
- ],
+ "errors": [],
  "items": [
   {
    "id": "bizinfo:11976a6f39a5",
@@ -529,6 +527,106 @@
    "matched": []
   },
   {
+   "id": "iris:28ba5e798ae1",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년 한미 이공분야 학생인력교류 프로그램(NSF IRES) 운영지원사업 신규과제 공모",
+   "org": "과학기술정보통신부 · 한국연구재단",
+   "category": "국가R&D · 접수중",
+   "start": "2026-10-16",
+   "end": "2026-11-17",
+   "posted": "2026-10-16",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024477&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "자유공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
+   "id": "iris:e90590d96b41",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년도 에너지기술 수용성 제고 및 사업화 촉진 사업 신규지원 대상 연구개발과제 공고",
+   "org": "기후에너지환경부 · 한국에너지기술평가원",
+   "category": "국가R&D · 접수중",
+   "start": "2026-10-19",
+   "end": "2026-11-10",
+   "posted": "2026-10-12",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024457&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "품목지정공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
+   "id": "iris:9a01e77e90c3",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년도 한-중(CSTEC) 신진과학자교류사업(파견) 신규과제 공모",
+   "org": "과학기술정보통신부 · 한국연구재단",
+   "category": "국가R&D · 접수중",
+   "start": "2026-10-12",
+   "end": "2026-11-13",
+   "posted": "2026-10-12",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024437&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "자유공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
+   "id": "iris:b4ec391df5fe",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년 연구산업육성사업(투자연계형 연구산업 혁신기술 개발) 본과제 신청 공고",
+   "org": "과학기술정보통신부 · 과학기술사업화진흥원",
+   "category": "국가R&D · 접수중",
+   "start": "2026-10-12",
+   "end": "2026-10-20",
+   "posted": "2026-10-12",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024419&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "지정공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
+   "id": "iris:aca2aa64ed0b",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년도 지역맞춤형 재난안전 문제해결 기술개발 지원(2단계) 신규과제 재공모",
+   "org": "행정안전부 · 한국산업기술기획평가원",
+   "category": "국가R&D · 접수중",
+   "start": "2026-10-06",
+   "end": "2026-10-20",
+   "posted": "2026-10-06",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024357&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "지정공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
    "id": "bizinfo:0bb910c06394",
    "source": "기업마당",
    "title": "2026년 3차 전력정보화 및 정책지원사업(재생에너지 분야) 신규지원 대상과제 공고",
@@ -552,6 +650,108 @@
    ]
   },
   {
+   "id": "iris:632be30e1c25",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년 4극3특 대경권 과학기술혁신지원사업 연구단 모집 공고(연장공고)",
+   "org": "과학기술정보통신부 · 연구개발특구진흥재단",
+   "category": "국가R&D · 마감,접수중",
+   "start": "2026-09-14",
+   "end": "2026-10-27",
+   "posted": "2026-09-14",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024199&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "자유공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
+   "id": "iris:fbf4b0a1da6f",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년 4극3특 동남권 과학기술혁신지원사업 연구단 모집 공고(연장)",
+   "org": "과학기술정보통신부 · 연구개발특구진흥재단",
+   "category": "국가R&D · 마감,접수중",
+   "start": "2026-09-11",
+   "end": "2026-10-26",
+   "posted": "2026-09-11",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024177&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "자유공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
+   "id": "iris:f2790ab374a9",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년 4극3특 호남권 과학기술혁신지원사업 연구단 모집 공고(연장공고)",
+   "org": "과학기술정보통신부 · 연구개발특구진흥재단",
+   "category": "국가R&D · 마감,접수중",
+   "start": "2026-09-11",
+   "end": "2026-10-27",
+   "posted": "2026-09-11",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024160&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "자유공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
+   "id": "iris:755f661d2244",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년 4극3특 제주특별자치도 과학기술혁신지원사업 연구단 모집 공고(연장공고)",
+   "org": "과학기술정보통신부 · 연구개발특구진흥재단",
+   "category": "국가R&D · 마감,접수중",
+   "start": "2026-09-11",
+   "end": "2026-10-26",
+   "posted": "2026-09-11",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024158&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [
+    "제주"
+   ],
+   "age": "",
+   "how": "자유공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
+   "id": "iris:ad50eb8fd3ce",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "2026년 4극3특 중부권 과학기술혁신지원사업 연구단 모집 공고",
+   "org": "과학기술정보통신부 · 연구개발특구진흥재단",
+   "category": "국가R&D · 마감,접수중",
+   "start": "2026-09-11",
+   "end": "2026-10-27",
+   "posted": "2026-09-11",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024139&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "자유공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
    "id": "ntis:9df4454e3832",
    "source": "NTIS",
    "kind": "연구과제",
@@ -570,6 +770,9 @@
    "contact": "055-856-5018",
    "budget": "50억 원",
    "first_seen": "2026-10-20",
+   "also": [
+    "IRIS"
+   ],
    "matched": []
   },
   {
@@ -600,6 +803,117 @@
    ]
   },
   {
+   "id": "bizinfo:248fa8e8297a",
+   "source": "기업마당",
+   "title": "[충남ㆍ충북ㆍ대전ㆍ세종] 2026년 중소기업 AI훈련확산센터 참여기업 모집 공고",
+   "org": "고용노동부",
+   "category": "경영",
+   "start": null,
+   "end": null,
+   "posted": "2026-08-24",
+   "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000125707",
+   "summary": "한국생산성본부는 고용노동부와 한국산업인력공단이 주관하는 2026년 중소기업 AI훈련확산센터의 수행기관으로, 중소기업의 AI 도입 및 실무 역량 강화를 지원하고 있습니다. 맞춤형 AI 훈련과정 개발 및 무료훈련 지원 프로그램에 참여할 기업을 모집합니다. ☞ (충청권) 충남, 충북, 대전, 세종 + 상시근로자 20인 이상인 중소기업 ※ 단, AI 활용 의지가 강하거나 데이터 기반 업무가 있는 경우 20인 미만인 기업도 가능 (예: AI 기반 스타트업 등) ☞ AI 훈련과정 개발, AI 교육 지원 - AI 훈련과정 개발 : AI 훈련 로",
+   "target": "중소기업",
+   "regions": [
+    "대전",
+    "세종",
+    "충북",
+    "충남"
+   ],
+   "age": "",
+   "how": "온라인 접수 (구글폼)",
+   "contact": "한국생산성본부 대전세종충청지역본부 042-489-6056, ykkim@kpc.or.kr / 한국생산성본부 AI 전환센터 02-398-7667, ykkim@kpc.or.kr",
+   "first_seen": "2026-10-20",
+   "kind": "지원사업",
+   "matched": [
+    "AI"
+   ]
+  },
+  {
+   "id": "bizinfo:887b710da001",
+   "source": "기업마당",
+   "title": "2026년 미래내일 일경험(인턴형) 참여기업 모집 공고",
+   "org": "고용노동부",
+   "category": "인력",
+   "start": "2026-08-18",
+   "end": "2026-10-31",
+   "posted": "2026-08-13",
+   "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000125426",
+   "summary": "고용노동부 주관 「2026년 미래내일 일경험 지원사업(인턴형)」에 함께할 참여기업을 모집합니다. 본 사업은 미취업 청년에게 기업 현장에서 실제 직무를 경험할 수 있는 기회를 제공하고, 참여기업에는 청년의 직무수행 과정과 직무 적합성을 확인할 수 있는 기회를 제공하는 정부지원 일경험 프로그램입니다. 운영기관 ㈜중소기업키움센터에서 참여청년 모집ㆍ추천부터 면접 및 매칭, 협약, 출결관리, 모니터링, 지원금 관련 행정업무까지 전반적인 운영을 지원​합니다. ☞ 고용보험 피보험자 수 10인 이상으로, 미취업 청년에게 실제 직무 기반의 일경험을",
+   "target": "중소기업",
+   "regions": [],
+   "age": "",
+   "how": "이메일 또는 유선 접수 - 이메일 접수 : jugml82@kiwoom.or.kr - 유선 접수 : 070-7633-0055",
+   "contact": "중소기업키움센터 전략기획팀 070-7633-0055",
+   "first_seen": "2026-10-20",
+   "kind": "지원사업",
+   "matched": []
+  },
+  {
+   "id": "bizinfo:8fab9de111b0",
+   "source": "기업마당",
+   "title": "[전북] 2026년 산업체 애로기술 해결을 위한 기술자문 참여기업 모집 공고(지역지능화혁신인재양성사업)",
+   "org": "전북특별자치도",
+   "category": "경영",
+   "start": null,
+   "end": null,
+   "posted": "2026-08-05",
+   "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000125119",
+   "summary": "(재)전북테크노파크에서는「지역지능화혁신인재양성사업」의 일환으로 전북지역 산업체의 애로기술 해결을 위한 기술자문을 지원하고자 하오니 참여를 희망하는 기업은 많은 신청 바랍니다. ☞&nbsp;신청일 기준 전북지역에 소재한(본사, 기업부설연구소) 기업 ☞ 개발기술 성과물의 현장 적용, 기술 실행과정에서 애로사항을 가지고 있는 전북지역 산업체 대상으로 기술자문 지원 - 산업체의 기술 애로사항을 고려하여 산업체-전문가 기술지원 컨설팅(자문)매칭 및 산업체-전문가간 기술자문 수행 - 기술자문 분야 : 농생명바이오, 첨단융복합소재, 미래모빌리티",
+   "target": "중소기업",
+   "regions": [
+    "전북"
+   ],
+   "age": "",
+   "how": "이메일 접수(coals0927@jbtp.or.kr)",
+   "contact": "전북테크노파크 전북디지털융합센터 피지컬AI팀 063-226-9070, coals0927@jbtp.or.kr",
+   "first_seen": "2026-10-20",
+   "kind": "지원사업",
+   "matched": []
+  },
+  {
+   "id": "iris:c67ae3eb869e",
+   "source": "IRIS",
+   "kind": "연구과제",
+   "title": "(TEST) KISTEP 통합공고 테스트 입니다.",
+   "org": "과학기술정보통신부 · 한국과학기술기획평가원",
+   "category": "국가R&D · 마감,예고,접수중",
+   "start": "2026-03-01",
+   "end": "2027-12-31",
+   "posted": "2026-07-28",
+   "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=017852&ancmPrg=ancmIng",
+   "summary": "",
+   "target": "",
+   "regions": [],
+   "age": "",
+   "how": "분야공모,자유공모",
+   "contact": "",
+   "first_seen": "2026-10-20",
+   "matched": []
+  },
+  {
+   "id": "bizinfo:1d05ac761ced",
+   "source": "기업마당",
+   "title": "[대구] 2026년 연구조직(기업부설연구소 등) 설립 및 기술ㆍ경영혁신 인증 지원사업 참여기업 모집공고",
+   "org": "대구광역시",
+   "category": "기술",
+   "start": "2026-05-06",
+   "end": "2026-10-30",
+   "posted": "2026-06-08",
+   "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000122866",
+   "summary": "지역기업의 R&amp;D 역량 강화와 국가연구개발사업 참여 확대를 도모하고, 대구지역 혁신형 중소기업 발굴을 통한 지역 과학기술 혁신역량 강화를 위해 과학기술정보통신부와 대구광역시가 지원하는「2026년 연구조직(기업부설연구소 등) 설립 및 기술ㆍ경영혁신 인증 지원사업」을 다음과 같이 공고하오니, 관심 있는 기업의 많은 참여 바랍니다. ☞&nbsp;대구지역 내 본사를 둔 중소기업 ☞ (컨설팅) 인증유형에 따른 1:1 전문가 매칭 및 컨설팅 - (인증수수료) 이노비즈/메인비즈/번처기업 신규 및 연장 인증수수료의 70%까지 지원(기업당 ",
+   "target": "중소기업",
+   "regions": [
+    "대구"
+   ],
+   "age": "",
+   "how": "이메일 접수(kiraming@dgtp.or.kr)",
+   "contact": "대구테크노파크 정책기획단 과학기술진흥센터 053-757-4184, kiraming@dgtp.or.kr",
+   "first_seen": "2026-10-20",
+   "kind": "지원사업",
+   "matched": []
+  },
+  {
    "id": "kstartup:c15cb48ebbf2",
    "source": "K-Startup",
    "title": "[종로여성인력개발센터] 2026년 청년일자리도약장려금 참여기업 모집 공고",
@@ -617,6 +931,31 @@
    "age": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만,10년미만",
    "how": "",
    "contact": "07040486709",
+   "first_seen": "2026-10-20",
+   "kind": "지원사업",
+   "matched": [],
+   "also": [
+    "기업마당"
+   ]
+  },
+  {
+   "id": "bizinfo:03a974769a61",
+   "source": "기업마당",
+   "title": "[충북] 2026년 글로벌 IP스타기업 육성 해외OA비용지원사업 모집 공고",
+   "org": "충청북도",
+   "category": "수출",
+   "start": "2026-01-19",
+   "end": "2026-12-31",
+   "posted": "2026-01-21",
+   "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000117705",
+   "summary": "2026년도 글로벌 IP스타기업 육성 해외OA비용 지원사업을 다음과 같이 공고하오니, 동 사업에 참여를 원하는 기업은 신청하여 주시기 바랍니다. ☞ 글로벌 IP스타기업 ☞ 해외출원 중인 건이 IP기반 해외진출지원기업 지위에서 중간사건(OA) 처리 된 경우 일부 소요 비용 지원 - 글로벌 IP스타기업 육성 사업을 합산하여 최대 7,000만원 이내 지원",
+   "target": "중소기업",
+   "regions": [
+    "충북"
+   ],
+   "age": "",
+   "how": "온라인 접수(RIPC사업관리시스템)",
+   "contact": "충북지식재산센터 043-229-2766, 043-229-2733",
    "first_seen": "2026-10-20",
    "kind": "지원사업",
    "matched": []
@@ -9121,6 +9460,9 @@
    "contact": "042-868-5078,042-869-6114",
    "budget": "9억 원",
    "first_seen": "2026-10-15",
+   "also": [
+    "IRIS"
+   ],
    "matched": []
   },
   {
@@ -9142,6 +9484,9 @@
    "contact": "042-868-5078,042-869-6114",
    "budget": "18.1억 원",
    "first_seen": "2026-10-15",
+   "also": [
+    "IRIS"
+   ],
    "matched": []
   },
   {
@@ -13651,6 +13996,9 @@
    "contact": "053-718-8434",
    "budget": "250억 원",
    "first_seen": "2026-10-15",
+   "also": [
+    "IRIS"
+   ],
    "matched": []
   },
   {
@@ -15042,29 +15390,6 @@
     "AI",
     "인공지능"
    ]
-  },
-  {
-   "id": "bizinfo:c0af51cfdd67",
-   "source": "기업마당",
-   "title": "[전남광주] 2026년 소상공인 IP출원(상표출원) 지원사업 소상공인 수혜자 모집 공고",
-   "org": "전남광주통합특별시",
-   "category": "경영",
-   "start": null,
-   "end": null,
-   "posted": "2026-09-15",
-   "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000126464",
-   "summary": "전남 소재 소상공인의 지식재산 피해를 예방하고 안정적인 성장을 위하여, 소상공인의 상호ㆍ브랜드 권리화를 지원하는 IP출원(상표출원) 지원 사업을 진행하오니 희망하는 소상공인은 아래에 따라 신청하여 주시기를 바랍니다. ☞「소상공인기본법」제2조에 따른 전남 소재 소상공인(사업자등록증 보유) ☞&nbsp;상표출원 지원",
-   "target": "소상공인",
-   "regions": [
-    "광주",
-    "전남"
-   ],
-   "age": "",
-   "how": "온라인, 방문, 우편, 이메일 접수 - 접수처 : 소재지(사업자등록증상 주소) 상 관할구역인 전남지식재산센터 - 이메일 : kst0920@jntp.or.kr - 온라인 : 전남지식재산센터",
-   "contact": "전남지식재산센터 061-242-8591, kst0920@jntp.or.kr",
-   "first_seen": "2026-10-15",
-   "kind": "지원사업",
-   "matched": []
   },
   {
    "id": "kstartup:f73b9f682b7a",
@@ -20079,6 +20404,28 @@
    ]
   },
   {
+   "id": "bizinfo:9fab9c17a7c1",
+   "source": "기업마당",
+   "title": "[대전] 2026년 소상공인 IP출원(상표출원) 지원 사업 소상공인 수혜자 모집 공고",
+   "org": "대전광역시",
+   "category": "경영",
+   "start": null,
+   "end": null,
+   "posted": "2026-07-29",
+   "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000124840",
+   "summary": "한국발명진흥회 대전지부(대전지식재산센터)는 소상공인의 지식재산 피해를 예방하고 안정적 성장을 위하여, 소상공인의 상호ㆍ브랜드 권리화를 지원하는 IP출원(상표출원) 지원 사업을 진행하오니 희망하는 소상공인은 아래에 따라 신청하여 주시기를 바랍니다. ☞「소상공인기본법」제2조에 따른 소상공인(사업자등록증 보유) ☞ 상표출원 지원 ※ 자세한 지원내용 공고문 참조&nbsp;",
+   "target": "소상공인",
+   "regions": [
+    "대전"
+   ],
+   "age": "",
+   "how": "방문, 우편, 팩스, 이메일 및 온라인 접수 - 접수처 : 소재지(사업자등록증사 주소) 관할구역 지역지식재산센터 - 팩스 : 문의처 문의 - 이메일 : bskim@kipa.org - 온라인 : 지역지식재산센터",
+   "contact": "대전지식재산센터 042-933-7812, bskim@kipa.org",
+   "first_seen": "2026-10-15",
+   "kind": "지원사업",
+   "matched": []
+  },
+  {
    "id": "bizinfo:ccd8832b72c6",
    "source": "기업마당",
    "title": "2026년 인증획득제품 해외 실증 지원사업(추경 포함) 추가 모집 공고",
@@ -22241,6 +22588,9 @@
    "contact": "02-2280-0428,02-6915-1589,061-338-9774,061-338-9775",
    "budget": "50억 원",
    "first_seen": "2026-10-15",
+   "also": [
+    "IRIS"
+   ],
    "matched": []
   },
   {
@@ -25456,28 +25806,6 @@
    ]
   },
   {
-   "id": "bizinfo:c13a4425c0c4",
-   "source": "기업마당",
-   "title": "[울산] 2026년 소상공인 고용보험료 지원사업 공고",
-   "org": "울산광역시",
-   "category": "인력",
-   "start": "2026-03-26",
-   "end": "2026-12-10",
-   "posted": "2026-04-03",
-   "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000120387",
-   "summary": "울산광역시 소상공인 고용보험료 일부 지원을 통한 고용보험 가입 촉진으로 자영업자의 사회안전망 확충하기 위한「2026년 소상공인 고용보험료 지원사업」을 다음과 같이 공고합니다. ☞&nbsp;‘자영업자 고용보험’에 가입한 울산소재 소상공인&nbsp; ☞ 고용보험료 납부액의 15%~30% 지원(1~2등급 : 15%, 3~7등급 : 30%) ※ 2026년 1월부터 납부한 고용보험료 소급 지원, 자부담 최소 5% 이상 -&nbsp;신청일(고용보험 가입일)로부터 3년간 지원",
-   "target": "소상공인",
-   "regions": [
-    "울산"
-   ],
-   "age": "",
-   "how": "이메일 또는 방문 접수 - 이메일 : gobo@ubpi.or.kr - 접수처 : 울산경제일자리진흥원 2층 일자리지원부 ※ 울산 북구 산업로 915",
-   "contact": "(고용보험료 울산광역시 지원관련) 울산경제일자리진흥원 일자리지원부 052-283-7195 / (고용보험 가입 관련) 근로복지공단 1588-0075 / (고용보험료 정부 지원 관련) 소상공인시장진흥공단 1533-0100",
-   "first_seen": "2026-10-15",
-   "kind": "지원사업",
-   "matched": []
-  },
-  {
    "id": "bizinfo:07bf7dd068c6",
    "source": "기업마당",
    "title": "2026년 3차 미래환경산업육성융자(오염방지시설자금) 지원사업 공고",
@@ -26829,6 +27157,28 @@
    "age": "",
    "how": "온라인 접수(고용24 누리집)",
    "contact": "청주상공회의소 청년일자리도약장려금 담당자 043-263-2669, ansrudgp@korcham.net",
+   "first_seen": "2026-10-15",
+   "kind": "지원사업",
+   "matched": []
+  },
+  {
+   "id": "bizinfo:0ce16a4da0f9",
+   "source": "기업마당",
+   "title": "[제주] 2026년 소상공인 고용보험료 지원 사업 공고",
+   "org": "제주특별자치도",
+   "category": "경영",
+   "start": "2026-01-26",
+   "end": "2026-12-31",
+   "posted": "2026-01-27",
+   "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000117889",
+   "summary": "소상공인 자영업자의 고용보험 가입 활성화 및 사회안전망 제도권 편입 촉진을 위해 아래와 같이 '2026년 소상공인 고용보험료 지원사업'에 대해 안내드리오니 많은 소상공인들이 신청할 수 있도록 홍보 바랍니다. ☞ 사업장 소재지가 제주특별자치도이고 '자영업자 고용보험'에 가입한 소상공인(사업주) ☞ 납부한 고용보험료의 15%~20% (지원기간 최대 5년(60개월)까지) 지원",
+   "target": "소상공인",
+   "regions": [
+    "제주"
+   ],
+   "age": "",
+   "how": "방문 접수 - 제출처 : 주소지 읍면동 주민센터 ※ 26년 인터넷(소상공인24) 신청 병행 예정",
+   "contact": "주소지 읍면동 주민센터",
    "first_seen": "2026-10-15",
    "kind": "지원사업",
    "matched": []
