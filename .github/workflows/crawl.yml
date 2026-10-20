@@ -43,6 +43,9 @@ jobs:
         if: steps.done.outputs.skip != 'true'
         with:
           python-version: "3.12"
+      - name: 라이브러리 설치 (NTIS 엑셀 읽기)
+        if: steps.done.outputs.skip != 'true'
+        run: pip install --quiet xlrd
       - name: 수집
         if: steps.done.outputs.skip != 'true'
         env:

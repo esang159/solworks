@@ -331,7 +331,130 @@ def parse_ntis_rows(html: str) -> list[dict]:
     return items
 
 
+NTIS_EXCEL = "https://www.ntis.go.kr/rndgate/eg/com/excel/download.do"
+
+
+class _NtisForm(HTMLParser):
+    """목록 화면의 검색 양식(id=rndMngForm) 기본값. '리스트 다운로드' 버튼이 이 값을 그대로 보낸다."""
+
+    def __init__(self):
+        super().__init__()
+        self.inside, self.fields, self._sel, self._opt = False, [], None, None
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == "form":
+            self.inside = a.get("id") == "rndMngForm"
+        if not self.inside:
+            return
+        if tag == "input" and a.get("name"):
+            if a.get("type") in ("checkbox", "radio") and "checked" not in a:
+                return
+            if a.get("type") not in ("button", "submit", "image"):
+                self.fields.append((a["name"], a.get("value") or ""))
+        elif tag == "select" and a.get("name"):
+            self._sel, self._opt = a["name"], None
+        elif tag == "option" and self._sel and (self._opt is None or "selected" in a):
+            self._opt = a.get("value") or ""
+
+    def handle_endtag(self, tag):
+        if tag == "form":
+            self.inside = False
+        elif tag == "select" and self._sel:
+            self.fields.append((self._sel, self._opt or ""))
+            self._sel = None
+
+
+def won_label(value) -> str:
+    """공고금액(원) → '228.6억 원' / '5,000만 원'. 0·빈칸이면 ''."""
+    try:
+        n = int(float(str(value).replace(",", "")))
+    except ValueError:
+        return ""
+    if n <= 0:
+        return ""
+    if n >= 100_000_000:
+        return f"{n / 100_000_000:,.1f}".rstrip("0").rstrip(".") + "억 원"
+    return f"{n // 10_000:,}만 원"
+
+
+def parse_ntis_excel_rows(rows: list[list[str]]) -> list[dict]:
+    """엑셀 행(첫 줄은 머리글) → 접수중·접수예정 공고."""
+    if not rows:
+        return []
+    head = [h.strip() for h in rows[0]]
+    col = {h: i for i, h in enumerate(head)}
+
+    def cell(r, name):
+        i = col.get(name)
+        return clean(r[i]) if i is not None and i < len(r) else ""
+
+    items = []
+    for r in rows[1:]:
+        status = cell(r, "현황")
+        if status not in ("접수중", "접수예정"):
+            continue
+        title = cell(r, "공고명")
+        if not title:
+            continue
+        no = cell(r, "순번").split(".")[0] or title
+        url = cell(r, "공고문 바로가기(URL)")
+        if not url.startswith("http"):
+            url = NTIS_LIST
+        org = " · ".join(x for x in [cell(r, "부처명"), cell(r, "공고기관명")] if x)
+        items.append({
+            "id": make_id("ntis", no),
+            "source": "NTIS",
+            "kind": "연구과제",
+            "title": title,
+            "org": org,
+            "category": f"국가R&D · {status}",
+            "start": parse_date(cell(r, "접수일")),
+            "end": parse_date(cell(r, "마감일")),
+            "posted": parse_date(cell(r, "공고일")),
+            "url": url,
+            "summary": "",
+            "target": "",
+            "regions": detect_regions(title),
+            "age": "",
+            "how": " · ".join(x for x in [cell(r, "형태"), cell(r, "공고유형")] if x and x != "-"),
+            "contact": cell(r, "문의처"),
+            "budget": won_label(cell(r, "공고금액")),
+        })
+    return items
+
+
+def fetch_ntis_excel() -> list[dict]:
+    """목록 화면의 '리스트 다운로드'(엑셀)를 한 번 받아 열린 공고만 고른다. 페이지를 넘기는 것보다 훨씬 빠르다."""
+    import xlrd   # 옛 .xls 형식 (워크플로에서 pip 로 설치)
+    from http.cookiejar import CookieJar
+
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(CookieJar()))
+    opener.addheaders = [("User-Agent", BROWSER_UA)]
+    form = _NtisForm()
+    form.feed(opener.open(NTIS_LIST, timeout=90).read().decode("utf-8", "replace"))
+    fields = [(k, v) for k, v in form.fields if k != "pageIndex"] + [("pageIndex", "1"), ("autoXsl", "ra")]
+    req = urllib.request.Request(NTIS_EXCEL, data=urllib.parse.urlencode(fields).encode(), method="POST",
+                                 headers={"Referer": NTIS_LIST, "Content-Type": "application/x-www-form-urlencoded"})
+    body = opener.open(req, timeout=300).read()
+    sheet = xlrd.open_workbook(file_contents=body).sheet_by_index(0)
+    rows = [[str(c) for c in sheet.row_values(i)] for i in range(sheet.nrows)]
+    items = parse_ntis_excel_rows(rows)
+    print(f"[ntis] 엑셀 {sheet.nrows - 1}행 중 접수중·예정 {len(items)}건")
+    return items
+
+
 def fetch_ntis(cfg: dict) -> list[dict]:
+    """엑셀로 먼저 받고, 안 되면 목록 화면을 넘기며 읽는다."""
+    if cfg.get("excel", True):
+        try:
+            return fetch_ntis_excel()
+        except Exception as e:  # noqa: BLE001
+            print(f"[ntis] 엑셀 실패, 목록 화면으로 읽음: {e}", file=sys.stderr)
+    return fetch_ntis_pages(cfg)
+
+
+def fetch_ntis_pages(cfg: dict) -> list[dict]:
     """최근 등록순 목록을 넘기며 접수중·접수예정 공고를 모은다.
 
     마감된 공고만 나오는 페이지가 연달아 stop_after 번 나오면 멈춘다.
@@ -514,10 +637,32 @@ def merge(old_items: list[dict], new_items: list[dict], cfg: dict, today: date) 
     today_s = today.isoformat()
 
     by_id = {it["id"]: it for it in old_items}
+    old_by_title = {(it.get("source"), norm_title(it.get("title", ""))): it for it in old_items}
     for it in new_items:
         prev = by_id.get(it["id"])
+        if prev is None:
+            # 같은 출처·같은 제목인데 id 만 바뀐 경우(수집 방식이 바뀌면 생김) 예전 것을 지우고 처음 본 날을 잇는다
+            prev = old_by_title.get((it.get("source"), norm_title(it.get("title", ""))))
+            if prev is not None and prev["id"] in by_id:
+                del by_id[prev["id"]]
         it["first_seen"] = prev.get("first_seen", today_s) if prev else today_s
         by_id[it["id"]] = it
+
+    # IRIS 공고가 NTIS 에도 있으면(NTIS 엑셀의 바로가기 주소가 IRIS ancmId 를 가리킴) NTIS 쪽 하나만 남긴다.
+    # NTIS 쪽에 문의처·공고금액이 더 있고, 바로가기는 어차피 IRIS 공고 페이지다.
+    ntis_ancm = {}
+    for it in by_id.values():
+        m = re.search(r"iris\.go\.kr/.*[?&]ancmId=(\d+)", it.get("url") or "") if it.get("source") == "NTIS" else None
+        if m:
+            ntis_ancm[m.group(1)] = it
+    for key in [k for k, it in by_id.items() if it.get("source") == "IRIS"]:
+        m = re.search(r"[?&]ancmId=(\d+)", by_id[key].get("url") or "")
+        if m and m.group(1) in ntis_ancm:
+            twin = ntis_ancm[m.group(1)]
+            twin.setdefault("also", [])
+            if "IRIS" not in twin["also"]:
+                twin["also"].append("IRIS")
+            del by_id[key]
 
     result, by_title = [], {}
     for it in by_id.values():

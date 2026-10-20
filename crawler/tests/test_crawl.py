@@ -125,5 +125,61 @@ class IrisTest(unittest.TestCase):
         self.assertEqual(it["category"], "국가R&D · 접수중")
         self.assertIn("ancmId=024477", it["url"])
 
+
+class NtisExcelTest(unittest.TestCase):
+    HEAD = ["순번", "현황", "형태", "부처명", "공고명", "접수일", "마감일", "접수마감시간", "공고일", "공고기관명",
+            "문의처", "공고문 바로가기(URL)", "공고유형", "공고금액", "공고사업명"]
+    ROWS = [
+        HEAD,
+        ["77157.0", "마감", "통합공고", "과학기술정보통신부", "마감된 공고", "2026.09.11", "2026.10.11", "23:59",
+         "2026.10.13", "연구개발특구진흥재단", "033-650-3411", "https://www.iris.go.kr/x", "본공고", "8626000000", "-"],
+        ["77156.0", "접수예정", "통합공고", "과학기술정보통신부",
+         "2026년 지역거점 AX 혁신 기술개발 사업 신규지원 대상과제 공고(표준모델 AX RD)", "2026.10.26", "2026.11.09", "17:00",
+         "2026.10.08", "정보통신산업진흥원", "053-215-3607",
+         "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024397&bsnsYyDetail=2026", "본공고",
+         "228600000000", "지역거점AX혁신기술개발(R&D)"],
+        ["77155.0", "접수중", "통합공고", "산업통상부", "2027년도 제품안전관리기술개발및실증사업 기술수요조사 공고",
+         "2026.10.08", "2026.11.06", "23:59", "2026.10.08", "한국산업기술기획평가원", "1544-6633",
+         "https://srome.keit.re.kr/x", "수요조사", "0", "관련정보없음"],
+    ]
+
+    def test_only_open_rows_with_contact_and_budget(self):
+        items = crawl.parse_ntis_excel_rows(self.ROWS)
+        self.assertEqual([i["category"] for i in items], ["국가R&D · 접수예정", "국가R&D · 접수중"])
+        ax = items[0]
+        self.assertEqual((ax["start"], ax["end"], ax["posted"]), ("2026-10-26", "2026-11-09", "2026-10-08"))
+        self.assertEqual(ax["org"], "과학기술정보통신부 · 정보통신산업진흥원")
+        self.assertEqual(ax["contact"], "053-215-3607")
+        self.assertEqual(ax["budget"], "2,286억 원")
+        self.assertIn("ancmId=024397", ax["url"])
+        self.assertEqual(items[1]["budget"], "")
+
+    def test_won_label(self):
+        self.assertEqual(crawl.won_label("50000000"), "5,000만 원")
+        self.assertEqual(crawl.won_label("150000000"), "1.5억 원")
+        self.assertEqual(crawl.won_label("-"), "")
+
+
+class MergeSourcesTest(unittest.TestCase):
+    CFG = {"keywords": [], "keep_expired_days": 14}
+
+    def test_changed_id_keeps_first_seen_and_iris_twin_dropped(self):
+        old = [{"id": "ntis:old", "source": "NTIS", "kind": "연구과제", "title": "AX 사업 공고",
+                "end": "2026-11-09", "first_seen": "2026-10-15"}]
+        new = [
+            {"id": "ntis:77156", "source": "NTIS", "kind": "연구과제", "title": "AX 사업 공고", "end": "2026-11-09",
+             "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024397&x=1"},
+            {"id": "iris:024397", "source": "IRIS", "kind": "연구과제", "title": "AX 사업 공고 (IRIS)", "end": "2026-11-09",
+             "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024397&ancmPrg=ancmIng"},
+            {"id": "iris:024477", "source": "IRIS", "kind": "연구과제", "title": "NSF IRES", "end": "2026-11-17",
+             "url": "https://www.iris.go.kr/contents/retrieveBsnsAncmView.do?ancmId=024477&ancmPrg=ancmIng"},
+        ]
+        out = crawl.merge(old, new, self.CFG, date(2026, 10, 20))
+        ids = sorted(i["id"] for i in out)
+        self.assertEqual(ids, ["iris:024477", "ntis:77156"])
+        ntis = next(i for i in out if i["id"] == "ntis:77156")
+        self.assertEqual(ntis["first_seen"], "2026-10-15")      # 예전에 본 날 유지 → NEW 로 다시 뜨지 않음
+        self.assertEqual(ntis["also"], ["IRIS"])
+
 if __name__ == "__main__":
     unittest.main()

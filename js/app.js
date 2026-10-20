@@ -377,7 +377,7 @@ function noticeCardHTML(n) {
   const big = d == null ? "상시" : d < 0 ? "마감" : d === 0 ? "D-Day" : `D-${d}`;
   const md = (x) => (x ? x.slice(5).replace("-", ".") : "?");
   const facts = [["기관", n.org], ["지역", n.regions && n.regions.length ? n.regions.join(", ") : "전국"],
-    ["대상", n.target], ["업력", n.age], ["문의", n.contact]].filter(([, v]) => v);
+    ["대상", n.target], ["업력", n.age], ["공고금액", n.budget], ["문의", n.contact]].filter(([, v]) => v);
   return `
     <article class="notice nc ${rnd ? "is-rnd" : "is-support"}">
       <div class="nc-band">
