@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>공유된 여행 일정 · 여행노트</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<!-- 여행노트 일정표의 [공유하기] 링크로 여는 읽기 전용 페이지. 로그인 없이 열린다.
+     일정은 주소의 # 뒤에 압축해 담겨 있다 (서버로 가지 않음). travel/index.html 의 packTrip 과 짝. -->
+<style>
+  :root{
+    --bg:#F4F6F4; --card:#fff; --ink:#171B1F; --ink-2:#4C545B; --ink-3:#78828A; --line:#E3E7E3;
+    --brand:#E8600C; --brand-s:#FDEDE2; --move:#1C6FBF; --memo:#FFF8E6; --memo-line:#F1E2B5;
+    --d1:#1C6FBF; --d2:#2A8A55; --d3:#E8600C; --d4:#7B4BA8;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 "IBM Plex Sans KR","Malgun Gothic",system-ui,sans-serif}
+  .wrap{max-width:860px; margin:0 auto; padding:28px max(16px, env(safe-area-inset-left,0px)) 60px max(16px, env(safe-area-inset-right,0px))}
+  .brand{font-size:12px; color:var(--ink-3); letter-spacing:.04em}
+  h1{margin:6px 0 4px; font-size:clamp(22px,4vw,30px); letter-spacing:-.03em; text-wrap:balance}
+  .meta{color:var(--ink-2); font-size:14px; display:flex; gap:12px; flex-wrap:wrap}
+  .meta span{font-family:"IBM Plex Mono",monospace; font-size:13px}
+  .memo{margin-top:16px; background:var(--memo); border:1px solid var(--memo-line); border-radius:10px; padding:10px 12px; white-space:pre-wrap; font-size:14px}
+  .memo b{display:block; font-size:12px; color:var(--ink-3); margin-bottom:2px}
+  .day{margin-top:22px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .dayhd{display:flex; align-items:center; gap:10px; padding:11px 14px; border-bottom:1px solid var(--line); background:#F8FAF8}
+  .dayhd .no{font:600 12px/1 "IBM Plex Mono",monospace; color:#fff; background:var(--hue); border-radius:5px; padding:4px 8px}
+  .dayhd b{font-size:15px}
+  .dayhd small{margin-left:auto; color:var(--ink-3); font-size:12.5px}
+  ol{list-style:none; margin:0; padding:6px 14px 10px}
+  li{display:grid; grid-template-columns:56px minmax(0,1fr); gap:10px; padding:10px 0; border-bottom:1px dashed var(--line)}
+  li:last-child{border-bottom:0}
+  .tm{font:600 14px/1.3 "IBM Plex Mono",monospace; color:var(--hue)}
+  .nm{font-weight:600}
+  .sub{font-size:13px; color:var(--ink-3)}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:3px; font-size:12px}
+  .bk{color:var(--ink-2); background:#EFF2EF; border-radius:5px; padding:1px 7px}
+  .row a{color:var(--move); font-weight:600; text-decoration:none}
+  .imemo{margin-top:6px; background:var(--memo); border:1px solid var(--memo-line); border-radius:8px; padding:6px 9px; font-size:13px; white-space:pre-wrap}
+  .err{margin-top:40px; text-align:center; color:var(--ink-2)}
+  footer{margin-top:28px; font-size:12px; color:var(--ink-3); text-align:center}
+</style>
+</head>
+<body>
+<main class="wrap" id="app"><p class="err">일정을 불러오는 중…</p></main>
+<script>
+(function () {
+  var app = document.getElementById("app");
+  function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fail(msg) { app.innerHTML = '<p class="err">' + esc(msg) + "</p>"; }
+  function bytes(b64) {
+    var s = atob(b64.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b64.length + 3) % 4));
+    var u = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+    return u;
+  }
+  function unpack(code) {
+    if (code[0] === "j") return Promise.resolve(new TextDecoder().decode(bytes(code.slice(1))));
+    if (code[0] !== "z") return Promise.reject(new Error("모양이 다른 링크"));
+    if (!window.DecompressionStream) return Promise.reject(new Error("이 브라우저에서는 열 수 없어요. 최신 크롬·사파리로 열어 주세요."));
+    var ds = new Blob([bytes(code.slice(1))]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Response(ds).text();
+  }
+  var code = decodeURIComponent((location.hash || "").slice(1));
+  if (!code) return fail("공유 링크가 비어 있어요. 받은 링크를 끝까지 복사했는지 확인해 주세요.");
+  unpack(code).then(function (txt) {
+    var t = JSON.parse(txt);
+    document.title = t.title + " · 여행노트";
+    var hues = ["--d1", "--d2", "--d3", "--d4"];
+    app.innerHTML =
+      '<p class="brand">여행노트 · 공유된 일정</p>' +
+      "<h1>" + esc(t.title) + "</h1>" +
+      '<div class="meta"><span>' + esc(t.date) + "</span>" + (t.route ? "<div>" + esc(t.route) + "</div>" : "") +
+      (t.people ? "<div>" + esc(t.people) + "명</div>" : "") + "</div>" +
+      (t.memo ? '<div class="memo"><b>여행 메모</b>' + esc(t.memo) + "</div>" : "") +
+      (t.days || []).map(function (d, i) {
+        return '<section class="day" style="--hue:var(' + hues[i % 4] + ')"><div class="dayhd"><span class="no">' + d.no + "일차</span><b>" +
+          esc(d.title) + "</b><small>" + esc(d.date) + " · " + (d.items || []).length + "곳</small></div><ol>" +
+          (d.items || []).map(function (it) {
+            var map = it.lat != null && it.lng != null
+              ? '<a href="https://map.kakao.com/link/map/' + encodeURIComponent(it.n) + "," + it.lat + "," + it.lng + '" target="_blank" rel="noopener">지도 ›</a>' : "";
+            return '<li><span class="tm">' + esc(it.t) + '</span><div><div class="nm">' + esc(it.n) + "</div>" +
+              (it.s ? '<div class="sub">' + esc(it.s) + "</div>" : "") +
+              (it.b || map ? '<div class="row">' + (it.b ? '<span class="bk">' + esc(it.b) + "</span>" : "") + map + "</div>" : "") +
+              (it.m ? '<div class="imemo">' + esc(it.m) + "</div>" : "") + "</div></li>";
+          }).join("") + "</ol></section>";
+      }).join("") +
+      "<footer>Sol Works 여행노트에서 만든 일정이에요</footer>";
+  }).catch(function (e) {
+    fail("일정을 열지 못했어요. " + (e && e.message ? e.message : ""));
+  });
+})();
+</script>
+</body>
+</html>

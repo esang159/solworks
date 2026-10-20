@@ -198,6 +198,25 @@
   .pchip.miss{background:var(--warn-s); color:var(--warn)}
   .askhint{font-size:12px; color:var(--ink-3)}
   /* 장소 찾기 (카카오 장소 검색) */
+  /* 여행 메모 · 일정별 메모 · 공유 */
+  .tripmemo{background:#fff; border:1px solid var(--line); border-radius:11px; padding:10px 12px; margin:0 0 14px}
+  .tripmemo label{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:6px; font-size:12px; color:var(--ink-3)}
+  .tripmemo label b{font-size:13.5px; color:var(--ink)}
+  .tripmemo label small{margin-left:auto; color:var(--ok)}
+  .tripmemo textarea, .blk-memoedit textarea{width:100%; border:1px solid var(--line-2); border-radius:8px; padding:8px 10px; font:inherit; font-size:13px; resize:vertical; background:var(--card-2)}
+  .tripmemo textarea:focus, .blk-memoedit textarea:focus{outline:0; border-color:var(--brand); background:#fff}
+  .opbtn.memo{width:auto; padding:0 6px; font-size:10.5px; font-weight:600}
+  .opbtn.memo.has{color:var(--brand); border-color:var(--brand); background:var(--brand-s)}
+  .blk-memo{margin-top:7px; padding:7px 9px; border-radius:8px; background:#FFF8E6; border:1px solid #F1E2B5; font-size:12.5px; color:var(--ink-2); white-space:pre-wrap; line-height:1.5; cursor:pointer}
+  .blk-memoedit{margin-top:7px; display:grid; gap:6px}
+  .blk-memoedit .row{display:flex; gap:6px; justify-content:flex-end}
+  .blk-memoedit button{font-size:12px; padding:5px 10px; border-radius:7px; border:1px solid var(--line-2); background:#fff}
+  .blk-memoedit button.ok{background:var(--brand); border-color:var(--brand); color:#fff; font-weight:700}
+  .sharebtn{margin-left:auto; padding:7px 12px; font-size:13px; font-weight:600}
+  .sec p + .sharebtn{margin-left:10px}
+  .sharebox{display:flex; gap:8px; align-items:center; flex-wrap:wrap; background:var(--c-move-s); border:1px solid var(--c-move); border-radius:10px; padding:9px 11px; margin:-4px 0 14px; font-size:12.5px; color:var(--ink-2)}
+  .sharebox input{flex:1; min-width:180px; border:1px solid var(--line-2); border-radius:7px; padding:6px 8px; font-size:12px; font-family:"IBM Plex Mono",monospace; background:#fff}
+  .sharebox button{border:1px solid var(--c-move); color:var(--c-move); background:#fff; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:600}
   .psearch{margin-top:16px}
   .psbar{display:flex; align-items:center; gap:9px; background:#fff; border:1px solid var(--line-2); border-radius:12px; padding:5px 5px 5px 13px}
   .psbar:focus-within{border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-s)}
@@ -1259,7 +1278,9 @@
     </aside>
 
     <div>
-      <div class="sec" style="margin-top:0"><span class="n">04</span><h2>여행 일정 요약</h2><p>예약 상태 포함</p></div>
+      <div class="sec" style="margin-top:0"><span class="n">04</span><h2>여행 일정 요약</h2><p>예약 상태 포함</p>
+        <button type="button" class="btn sharebtn" id="trip-share"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><circle cx="18" cy="5" r="2.6" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="19" r="2.6" stroke="currentColor" stroke-width="1.8"/><path d="m8.3 10.8 7.4-4.3M8.3 13.2l7.4 4.3" stroke="currentColor" stroke-width="1.8"/></svg>공유하기</button></div>
+      <div class="sharebox" id="share-box" hidden></div>
       <div class="tripbar">
         <label class="tb"><span class="k">출발일</span>
           <input class="tbin" type="date" id="cart-date" aria-label="출발일">
@@ -1286,6 +1307,10 @@
         <span class="tbend" id="cart-tripnote">날짜를 바꾸면 다시 짭니다</span>
       </div>
       <div class="keybox" id="keybox"></div>
+      <div class="tripmemo">
+        <label for="trip-memo"><b>여행 메모</b><span>준비물 · 연락처 · 할 일 등 이 여행 전체에 대한 메모</span><small id="trip-memo-saved"></small></label>
+        <textarea id="trip-memo" rows="3" placeholder="예) 우산 챙기기, 숙소 체크인 15시, 렌터카 예약번호 1234"></textarea>
+      </div>
       <div class="days" id="days-cart"></div>
 
       <div class="sec" style="margin-top:26px"><span class="n">05</span><h2>예약</h2><p id="bk-count">0건 미예약</p></div>
@@ -2318,10 +2343,26 @@ try{
     if(pv.filters) state.filters = pv.filters;
     if(pv.picks) state.picks = pv.picks;
     if(pv.moveSel) state.moveSel = pv.moveSel;
+    if(pv.memos) state.memos = pv.memos;
   }}
 }catch(e){}
 Object.keys(FILTERS).forEach(function(k){ if(!state.filters[k]) state.filters[k] = FILTERS[k].preset.slice(); });
 function save(){ try{ localStorage.setItem('yeohaengnote-v3', JSON.stringify(state)); }catch(e){} }
+/* 여행 메모 — 일정은 문장으로 매번 다시 짜지므로, 메모는 '도시·출발일·기간'을 열쇠로 따로 기억한다.
+   일정별 메모는 그 안에서 '몇 일차·장소 이름'으로 찾는다. */
+function tripKey(){ return TRIP ? [TRIP.q.city, TRIP.q.date || '', TRIP.nights].join('|') : ''; }
+function memoBox(){
+  if(!state.memos) state.memos = {};
+  var k = tripKey();
+  if(!state.memos[k]) state.memos[k] = {trip:'', items:{}};
+  return state.memos[k];
+}
+function itemMemo(dayNo, it){ return (memoBox().items[dayNo + '|' + it.n]) || ''; }
+function setItemMemo(dayNo, it, text){
+  var b = memoBox(), key = dayNo + '|' + it.n;
+  if(text) b.items[key] = text; else delete b.items[key];
+  save();
+}
 function won(n){ return '₩' + Math.round(n).toLocaleString('ko-KR'); }
 /* 도시별로 "꼭 갈 곳" 선택을 따로 기억한다 */
 function picksFor(city){
@@ -4370,6 +4411,65 @@ Array.prototype.forEach.call(document.querySelectorAll('[data-ask]'), function(b
   });
 });
 
+/* ═══ 여행 메모 ═══ */
+var tripMemoEl = document.getElementById('trip-memo'), tripMemoTimer = null;
+function syncTripMemo(){
+  if(!tripMemoEl || document.activeElement === tripMemoEl) return;
+  tripMemoEl.value = TRIP ? memoBox().trip : '';
+  document.getElementById('trip-memo-saved').textContent = '';
+}
+if(tripMemoEl) tripMemoEl.addEventListener('input', function(){
+  clearTimeout(tripMemoTimer);
+  tripMemoTimer = setTimeout(function(){
+    memoBox().trip = tripMemoEl.value; save();
+    document.getElementById('trip-memo-saved').textContent = '저장됨';
+  }, 400);
+});
+
+/* ═══ 일정 공유하기 ═══
+   서버 없이 링크 하나에 일정을 담는다: 일정 → JSON → 압축 → 주소의 # 뒤. 주소의 # 뒤는 서버로 가지 않는다.
+   받은 사람은 travel/share.html 에서 로그인 없이 읽기 전용으로 본다 (메모도 같이 보인다). */
+function tripPayload(){
+  var mb = memoBox();
+  return {v:1, title:TRIP.title, date:TRIP.dateLabel, route:TRIP.routeLabel, people:state.people, memo:mb.trip || '',
+    days: TRIP.days.map(function(d){ return {no:d.no, title:d.title, date:d.date,
+      items: d.items.map(function(it){ return {t:it.t, n:it.n, s:it.s || '', lat:it.lat, lng:it.lng,
+        b:it.book ? (it.status === 'done' ? '예약 완료' : it.book + ' 미예약') : '', m:mb.items[d.no + '|' + it.n] || ''}; })}; })};
+}
+function b64url(bytes){
+  var s = ''; for(var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function packTrip(obj){
+  var raw = new TextEncoder().encode(JSON.stringify(obj));
+  if(!window.CompressionStream) return Promise.resolve('j' + b64url(raw));
+  var cs = new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  return new Response(cs).arrayBuffer().then(function(buf){ return 'z' + b64url(new Uint8Array(buf)); });
+}
+document.getElementById('trip-share').addEventListener('click', function(){
+  if(!TRIP) return;
+  var box = document.getElementById('share-box');
+  packTrip(tripPayload()).then(function(code){
+    var url = new URL('share.html', location.href).href.split('#')[0] + '#' + code;
+    var title = TRIP.title + ' · 여행노트';
+    if(navigator.share && /Mobi|Android|iPhone/i.test(navigator.userAgent)){
+      navigator.share({title:title, text:TRIP.dateLabel + ' ' + TRIP.title, url:url}).catch(function(){});
+    }
+    box.hidden = false;
+    box.innerHTML = '<span>이 링크를 보내면 로그인 없이 일정을 볼 수 있어요 (메모 포함).</span>';
+    var inp = el('input'); inp.readOnly = true; inp.value = url; inp.setAttribute('aria-label','공유 링크');
+    var cp = el('button',null,'복사'); cp.type='button';
+    var op = el('a',null,'열어 보기'); op.href = url; op.target = '_blank'; op.rel = 'noopener';
+    op.style.cssText = 'font-weight:600;color:var(--c-move)';
+    cp.addEventListener('click', function(){
+      (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function(){ cp.textContent = '복사됨 ✓'; })
+        .catch(function(){ inp.select(); cp.textContent = '선택됨 · Ctrl+C'; });
+    });
+    box.appendChild(inp); box.appendChild(cp); box.appendChild(op);
+    cp.click();
+  });
+});
+
 /* ═══ 생성 결과 반영 ═══ */
 function renderTrip(trip){
   TRIP = trip;
@@ -4385,6 +4485,7 @@ function renderTrip(trip){
   renderBooking();
   ['map-hero','map-cart'].forEach(function(id){ var x=document.getElementById(id); if(x) buildMap(x, {}); });
   ['days-cart'].forEach(function(id){ var x=document.getElementById(id); if(x) buildDays(x); });
+  syncTripMemo();
   bindModeFilter();
   setCart(trip.itemCount);
   renderKeyBox();
@@ -4659,6 +4760,10 @@ function buildDays(container){
       var rm=el('button','opbtn del','✕');
       rm.type='button'; rm.title='삭제'; rm.setAttribute('aria-label', it.n+' 삭제');
       rm.addEventListener('click', function(){ removeItem(it.id); });
+      var memoText = itemMemo(day.no, it);
+      var mb=el('button','opbtn memo' + (memoText ? ' has' : ''), '메모');
+      mb.type='button'; mb.title='이 일정에 메모'; mb.setAttribute('aria-label', it.n+' 메모');
+      hd.appendChild(mb);
       hd.appendChild(grip); hd.appendChild(rm);
       li.appendChild(hd);
 
@@ -4685,6 +4790,37 @@ function buildDays(container){
         row.appendChild(bk);
         li.appendChild(row);
       }
+
+      /* 일정별 메모: 적어 둔 게 있으면 아래에 보이고, [메모]나 메모를 누르면 고친다 */
+      var memoView = null;
+      function showMemo(){
+        if(memoView) memoView.remove();
+        var t = itemMemo(day.no, it);
+        mb.classList.toggle('has', !!t);
+        if(!t){ memoView = null; return; }
+        memoView = el('div','blk-memo', t);
+        memoView.title = '눌러서 고치기';
+        memoView.addEventListener('click', editMemo);
+        li.appendChild(memoView);
+      }
+      function editMemo(){
+        if(li.querySelector('.blk-memoedit')) return;
+        if(memoView){ memoView.remove(); memoView = null; }
+        var box = el('div','blk-memoedit');
+        var ta = el('textarea'); ta.rows = 3; ta.placeholder = '예) 예약번호, 주차 정보, 꼭 먹을 메뉴'; ta.value = itemMemo(day.no, it);
+        var row = el('div','row');
+        var cancel = el('button',null,'취소'); cancel.type='button';
+        var ok = el('button','ok','저장'); ok.type='button';
+        row.appendChild(cancel); row.appendChild(ok);
+        box.appendChild(ta); box.appendChild(row);
+        li.appendChild(box);
+        ta.focus();
+        cancel.addEventListener('click', function(){ box.remove(); showMemo(); });
+        ok.addEventListener('click', function(){ setItemMemo(day.no, it, ta.value.trim()); box.remove(); showMemo(); });
+        ta.addEventListener('keydown', function(e){ if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ok.click(); if(e.key === 'Escape') cancel.click(); });
+      }
+      mb.addEventListener('click', editMemo);
+      showMemo();
 
       bd.addEventListener('click', function(e){
         if(e.target.closest('button')) return;
