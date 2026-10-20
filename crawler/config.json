@@ -33,8 +33,7 @@
     "iris": {
       "enabled": true,
       "progress": [
-        "ancmIng",
-        "ancmPre"
+        "ancmIng"
       ],
       "max_pages": 30,
       "delay": 0.3

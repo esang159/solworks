@@ -569,10 +569,10 @@ def parse_iris(data: dict, prg: str = "ancmIng") -> list[dict]:
 
 
 def fetch_iris(cfg: dict) -> list[dict]:
-    """접수 중(ancmIng)·접수 예정(ancmPre) 공고를 쪽마다 넘겨 모은다.
+    """IRIS '공고 중'(ancmIng) 목록을 쪽마다 넘겨 모은다. (ancmPre 는 IRIS 가 모르는 값이라 응답이 오지 않는다)
     한 쪽이 안 열려도 그때까지 받은 것은 버리지 않는다. 어디서 막히는지 보이게 쪽마다 기록한다."""
     items, seen = [], set()
-    for prg in cfg.get("progress", ["ancmIng", "ancmPre"]):
+    for prg in cfg.get("progress", ["ancmIng"]):
         page, pages = 1, 1
         while page <= pages and page <= cfg.get("max_pages", 30):
             t0 = time.time()
