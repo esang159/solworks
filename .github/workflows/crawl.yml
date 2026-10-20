@@ -1,8 +1,9 @@
 name: 사업공고 수집
 
 on:
-  # GitHub 예약 실행은 붐비면 늦어지거나 빠지기도 해서 아침에 세 번 걸어 둔다.
-  # 그날 이미 수집했으면(아래 '오늘 이미 했는지') 나머지는 바로 끝난다.
+  # GitHub 예약 실행은 붐비면 늦어지거나 빠지기도 한다 (실제로 8:47·9:37 이 매일 빠지고 10시 반 넘어 돌았다).
+  # 그래서 정시 실행은 Cloudflare 중계 서버(worker/)가 08:47 에 이 워크플로를 불러서 하고(scheduled=true),
+  # 아래 세 번은 그게 안 됐을 때를 위한 예비. 그날 이미 수집했으면(아래 '오늘 이미 했는지') 바로 끝난다.
   schedule:
     - cron: "47 23 * * *"  # 08:47 KST (보통 9시 전후 도착)
     - cron: "37 0 * * *"   # 09:37 KST (첫 번째가 빠졌을 때)
@@ -17,6 +18,10 @@ on:
         description: "카카오톡 알림 보내기 (이미 보낸 날 다시 수집할 때는 끄기)"
         type: boolean
         default: true
+      scheduled:
+        description: "예약 실행처럼 (오늘 이미 했으면 건너뜀) — Cloudflare 정시 실행이 켬"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -33,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: 오늘 이미 했는지
         id: done
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || inputs.scheduled
         run: |
           today=$(TZ=Asia/Seoul date +%F)
           last=$(python3 -c "import json;print(json.load(open('data/notices.json')).get('updated_at','')[:10])" 2>/dev/null || true)

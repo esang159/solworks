@@ -3,6 +3,7 @@
 // - 키는 Cloudflare 비밀 값(NAVER_ID, NAVER_SECRET)에만 있고 응답에는 절대 넣지 않는다.
 //
 //   GET /health                    살아 있는지 (로그인 불필요)
+//   매일 08:47 KST                 사업공고 수집 워크플로 실행 (wrangler.toml [triggers], 비밀 값 GH_TOKEN)
 //   GET /naver/local?q=춘천역 맛집   네이버 지역 검색 → {items:[{name, category, address, road, lat, lng, link}]}
 
 const json = (body, status, cors) =>
@@ -83,7 +84,7 @@ export default {
     if (req.method !== "GET") return json({ error: "method" }, 405, cors);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, naver: Boolean(env.NAVER_ID && env.NAVER_SECRET) }, 200, cors);
+      return json({ ok: true, naver: Boolean(env.NAVER_ID && env.NAVER_SECRET), github: Boolean(env.GH_TOKEN) }, 200, cors);
     }
 
     if (url.pathname === "/naver/local") {
@@ -97,4 +98,24 @@ export default {
 
     return json({ error: "not_found" }, 404, cors);
   },
+
+  // 정시 실행: GitHub 의 사업공고 수집을 workflow_dispatch 로 부른다. 그날 이미 했으면 워크플로가 알아서 건너뛴다.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(dispatchCrawl(env));
+  },
 };
+
+async function dispatchCrawl(env) {
+  if (!env.GH_TOKEN) { console.log("GH_TOKEN 없음 - 건너뜀"); return; }
+  const r = await fetch(`https://api.github.com/repos/${env.GH_REPO}/actions/workflows/${env.GH_WORKFLOW}/dispatches`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${env.GH_TOKEN}`,
+      accept: "application/vnd.github+json",
+      "user-agent": "solworks-relay",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ ref: env.GH_REF, inputs: { scheduled: "true" } }),
+  });
+  console.log("수집 실행 요청", r.status, r.status === 204 ? "" : await r.text());
+}

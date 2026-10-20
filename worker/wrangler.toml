@@ -5,7 +5,15 @@ main = "worker.js"
 compatibility_date = "2025-09-01"
 workers_dev = true
 
+# 매일 08:47 KST(=23:47 UTC)에 사업공고 수집을 GitHub 에서 실행시킨다 (GitHub 예약 실행은 자주 늦거나 빠짐)
+[triggers]
+crons = ["47 23 * * *"]
+
 [vars]
 # Firebase 웹 설정값(공개용). 로그인 증표 확인에만 쓴다.
 FIREBASE_API_KEY = "AIzaSyAFCCWL4yFJ0_B63jlVxmMucj2XNZfr5Hs"
 ALLOWED_ORIGINS = "https://www.solworks.store,https://solworks.store"
+# 정시 실행으로 부를 GitHub 워크플로
+GH_REPO = "esang159/solworks"
+GH_WORKFLOW = "crawl.yml"
+GH_REF = "claude/wonderful-cerf-4b9ppx"
