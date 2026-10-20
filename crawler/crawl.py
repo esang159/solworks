@@ -396,16 +396,18 @@ def fetch_ntis(cfg: dict) -> list[dict]:
 IRIS_BASE = "https://www.iris.go.kr"
 IRIS_LIST = IRIS_BASE + "/contents/retrieveBsnsAncmBtinSituList.do"
 IRIS_LIST_VIEW = IRIS_BASE + "/contents/retrieveBsnsAncmBtinSituListView.do"
-IRIS_VIEW = IRIS_BASE + "/contents/retrieveBsnsAncmView.do"   # 상세 화면 (?ancmId=...)
+IRIS_VIEW = IRIS_BASE + "/contents/retrieveBsnsAncmView.do"   # 상세 화면 (?ancmId=...&ancmPrg=...) — GET 으로 열리는 것 확인
+BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
 
 def http_post(url: str, data: dict, retries: int = 1) -> bytes:
     body = urllib.parse.urlencode(data).encode()
     for attempt in range(retries + 1):
         try:
+            # IRIS 는 크롤러 이름으로 부르면 응답이 늦거나 끊긴다. 일반 브라우저처럼 부르고 넉넉히 기다린다.
             req = urllib.request.Request(url, data=body, method="POST", headers={
-                "User-Agent": USER_AGENT, "X-Requested-With": "XMLHttpRequest", "Referer": IRIS_LIST_VIEW})
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+                "User-Agent": BROWSER_UA, "X-Requested-With": "XMLHttpRequest", "Referer": IRIS_LIST_VIEW})
+            with urllib.request.urlopen(req, timeout=60) as resp:
                 return resp.read()
         except Exception:
             if attempt == retries:

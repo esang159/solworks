@@ -13,6 +13,10 @@ on:
         description: "카카오톡 테스트 메시지 보내기"
         type: boolean
         default: false
+      kakao:
+        description: "카카오톡 알림 보내기 (이미 보낸 날 다시 수집할 때는 끄기)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -56,7 +60,7 @@ jobs:
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push
       - name: 카카오톡 알림
-        if: steps.done.outputs.skip != 'true'
+        if: steps.done.outputs.skip != 'true' && (github.event_name == 'schedule' || inputs.kakao || inputs.kakao_test)
         continue-on-error: true   # 알림이 실패해도 수집 결과는 그대로 둔다
         env:
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
