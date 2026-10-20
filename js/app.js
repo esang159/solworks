@@ -132,7 +132,7 @@ function openDashboard() {
   showTab(store.get("tab", "home"));
 }
 function renderHub() {
-  const todos = state.todos.filter((t) => !isDone(t)).length;
+  const todos = state.todos.filter((t) => !t.offHome && !isDone(t)).length;
   const works = state.works.filter((w) => !workProgress || workProgress(w) < 100).length;
   const fresh = state.notices.filter(isNew).length;
   $("#dashMeta").textContent = `할 일 ${todos} · 진행 중 업무 ${works} · 새 공고 ${fresh}`;
@@ -618,6 +618,7 @@ function renderWorks() {
             ${t.daily ? `<span class="daily-chip" title="매일 하는 일">매일</span>` : ""}
             ${t.due && !isDone(t) ? ddayBadge(t.due) : ""}
             <span class="grow">${esc(t.text)}</span>
+            <button class="icon" data-work-todo-del="${t.id}" title="이 업무에서 할 일 삭제">×</button>
           </li>`).join("")}
       </ul>
       <form class="work-todo-form" data-work="${w.id}">
@@ -651,10 +652,18 @@ $("#workForm").addEventListener("submit", (e) => {
 $("#workList").addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
+  if (b.dataset.workTodoDel) {
+    // 업무 안에서 지우면 할 일 자체를 지운다
+    state.todos = state.todos.filter((t) => t.id !== b.dataset.workTodoDel);
+    store.set("todos", state.todos);
+    renderAll();
+    return;
+  }
   if (b.dataset.workDel) {
     const id = b.dataset.workDel;
     state.works = state.works.filter((w) => w.id !== id);
-    // 업무를 지워도 할 일은 남기고 연결만 끊는다
+    // 업무를 지워도 할 일은 남기고 연결만 끊는다 (할 일 목록에서 이미 지운 것만 같이 지운다)
+    state.todos = state.todos.filter((t) => !(t.workId === id && t.offHome));
     for (const t of state.todos) if (t.workId === id) delete t.workId;
     store.set("todos", state.todos);
   } else if (b.dataset.workStar) {
@@ -684,8 +693,10 @@ $("#workList").addEventListener("submit", (e) => {
 // ---------------------------------------------------------------- 할 일 / 메모
 
 // 체크해도 지우지 않고 줄만 긋는다. 매일 하는 일이 위, 나머지는 추가한 순서 그대로.
+// offHome: 업무에 연결된 할 일을 할 일 목록에서만 지운 것 (업무 쪽에는 남아 있다)
 function todoListHTML() {
-  const list = state.todos.filter((t) => t.daily).concat(state.todos.filter((t) => !t.daily));
+  const mine = state.todos.filter((t) => !t.offHome);
+  const list = mine.filter((t) => t.daily).concat(mine.filter((t) => !t.daily));
   return list.length ? list.map((t) => `
     <li class="todo ${isDone(t) ? "done" : ""}">
       <input type="checkbox" data-todo="${t.id}" ${isDone(t) ? "checked" : ""} aria-label="완료">
@@ -693,7 +704,7 @@ function todoListHTML() {
       ${t.due ? (isDone(t) ? `<span class="meta due">${esc(t.due.replace(/-/g, "."))}</span>` : ddayBadge(t.due)) : ""}
       ${t.workId && workName(t.workId) ? `<span class="work-chip" title="연결된 업무">${esc(workName(t.workId))}</span>` : ""}
       <span class="grow">${esc(t.text)}</span>
-      <button class="icon" data-todo-del="${t.id}" title="삭제">×</button>
+      <button class="icon" data-todo-del="${t.id}" title="${t.workId && workName(t.workId) ? "할 일 목록에서 빼기 (업무에는 남아요)" : "삭제"}">×</button>
     </li>`).join("") : `<li class="empty">할 일이 없습니다.</li>`;
 }
 
@@ -723,7 +734,10 @@ for (const sel of ["#homeTodo"]) {
   $(sel).addEventListener("click", (e) => {
     if (e.target.dataset.todo) toggleTodo(e.target.dataset.todo);
     if (e.target.dataset.todoDel) {
-      state.todos = state.todos.filter((x) => x.id !== e.target.dataset.todoDel);
+      // 업무에 연결된 할 일은 할 일 목록에서만 빼고 업무에는 남긴다 (#9)
+      const t = state.todos.find((x) => x.id === e.target.dataset.todoDel);
+      if (t?.workId && workName(t.workId)) t.offHome = true;
+      else state.todos = state.todos.filter((x) => x.id !== e.target.dataset.todoDel);
       store.set("todos", state.todos);
       renderAll();
     }
