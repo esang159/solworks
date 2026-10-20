@@ -569,22 +569,31 @@ def parse_iris(data: dict, prg: str = "ancmIng") -> list[dict]:
 
 
 def fetch_iris(cfg: dict) -> list[dict]:
-    """접수 중(ancmIng)·접수 예정(ancmPre) 공고를 쪽마다 넘겨 모은다."""
+    """접수 중(ancmIng)·접수 예정(ancmPre) 공고를 쪽마다 넘겨 모은다.
+    한 쪽이 안 열려도 그때까지 받은 것은 버리지 않는다. 어디서 막히는지 보이게 쪽마다 기록한다."""
     items, seen = [], set()
     for prg in cfg.get("progress", ["ancmIng", "ancmPre"]):
         page, pages = 1, 1
         while page <= pages and page <= cfg.get("max_pages", 30):
-            raw = http_post(IRIS_LIST, {"pageIndex": str(page), "ancmPrg": prg}, retries=2)
-            data = json.loads(raw.decode("utf-8", "replace"))
+            t0 = time.time()
+            try:
+                raw = http_post(IRIS_LIST, {"pageIndex": str(page), "pageUnit": "50", "ancmPrg": prg}, retries=1)
+                data = json.loads(raw.decode("utf-8", "replace"))
+            except Exception as e:  # noqa: BLE001
+                print(f"[iris] {prg} {page}쪽 실패 ({time.time() - t0:.0f}초): {e}")
+                break
             pages = int((data.get("paginationInfo") or {}).get("totalPageCount") or 1)
-            for it in parse_iris(data, prg):
+            got = parse_iris(data, prg)
+            print(f"[iris] {prg} {page}/{pages}쪽 {len(got)}건 ({time.time() - t0:.1f}초)")
+            for it in got:
                 if it["id"] not in seen:
                     seen.add(it["id"])
                     items.append(it)
             page += 1
             time.sleep(cfg.get("delay", 0.3))
-        print(f"[iris] {prg}: {pages}쪽 확인")
     print(f"[iris] {len(items)}건")
+    if not items:
+        raise RuntimeError("IRIS 공고를 하나도 받지 못함")
     return items
 
 
