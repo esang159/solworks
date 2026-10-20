@@ -32,6 +32,12 @@ jobs:
           echo "== 예전 개발자센터"
           curl -sS -w "\nHTTP %{http_code}\n" "https://openapi.naver.com/v1/search/local.json?$q" \
             -H "X-Naver-Client-Id: $NAVER_ID" -H "X-Naver-Client-Secret: $NAVER_SECRET" | head -c 300; echo
+      - name: ODsay를 서버에서 부를 수 있는지 (지금 페이지에 있는 키로)
+        run: |
+          k="s0BOd9kJGscmQnFxFYmC6w"
+          u="https://api.odsay.com/v1/api/searchPubTransPathT?SX=126.9707&SY=37.5547&EX=126.9770&EY=37.5788&OPT=0&SearchType=0&apiKey=$k"
+          echo "== Referer 없이"; curl -sS "$u" | head -c 300; echo
+          echo "== Referer: solworks.store"; curl -sS "$u" -H "Referer: https://www.solworks.store/travel/" -H "Origin: https://www.solworks.store" | head -c 300; echo
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
