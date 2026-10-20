@@ -766,7 +766,7 @@ function renderNotes() {
           `<button type="button" class="swatch mini n-${c} ${c === n.color ? "on" : ""}" data-note-color="${c}" title="${NOTE_COLOR_NAMES[c]}"></button>`).join("")}</span>
         <button type="button" class="note-del" data-note-del title="메모 삭제">×</button>
       </div>
-      <textarea class="note-text" placeholder="여기에 적으세요" aria-label="메모 내용">${esc(n.text)}</textarea>
+      <div class="note-preview" role="button" tabindex="0" data-note-open aria-label="메모 크게 보기">${n.text.trim() ? esc(n.text) : `<span class="ph">눌러서 적기</span>`}</div>
       <div class="note-time">${esc(noteTime(n.updated))}</div>
     </div>`).join("") : `<p class="meta note-empty">아직 메모가 없어요. <b>+ 새 메모</b>를 눌러 시작해 보세요.</p>`;
 }
@@ -777,10 +777,11 @@ $("#noteSearch").addEventListener("input", renderNotes);
 
 $("#addNote").addEventListener("click", () => {
   $("#noteSearch").value = "";   // 새 메모가 바로 보이도록 검색을 비운다
-  state.notes.unshift({ id: uid(), text: "", color: newNoteColor, updated: new Date().toISOString() });
+  const n = { id: uid(), text: "", color: newNoteColor, updated: new Date().toISOString() };
+  state.notes.unshift(n);
   saveNotes();
   renderNotes();
-  $("#noteBoard .note-text")?.focus();
+  openNote(n.id);
 });
 $("#newNoteColors").addEventListener("click", (e) => {
   const c = e.target.dataset.newColor;
@@ -790,25 +791,53 @@ $("#newNoteColors").addEventListener("click", (e) => {
   renderNoteColors();
 });
 
+// 메모를 누르면 큰 창으로 열어 전체를 보고 고친다. 쓰는 동안 0.4초 모아서 저장.
 const noteTimers = {};
-$("#noteBoard").addEventListener("input", (e) => {
-  if (!e.target.classList.contains("note-text")) return;
-  const el = e.target.closest(".note");
-  const n = state.notes.find((x) => x.id === el.dataset.note);
+let openNoteId = null;
+function openNote(id) {
+  const n = state.notes.find((x) => x.id === id);
   if (!n) return;
-  n.text = e.target.value;
+  openNoteId = id;
+  const dlg = $("#noteDialog");
+  dlg.querySelector(".note").className = `note big n-${n.color}`;
+  $("#noteBig").value = n.text;
+  $("#noteBigTime").textContent = noteTime(n.updated);
+  dlg.showModal();
+  const ta = $("#noteBig");
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+$("#noteBig").addEventListener("input", () => {
+  const n = state.notes.find((x) => x.id === openNoteId);
+  if (!n) return;
+  n.text = $("#noteBig").value;
   n.updated = new Date().toISOString();
   clearTimeout(noteTimers[n.id]);
   noteTimers[n.id] = setTimeout(() => {
     saveNotes();
-    el.querySelector(".note-time").textContent = "저장됨 · " + noteTime(n.updated);
+    $("#noteBigTime").textContent = "저장됨 · " + noteTime(n.updated);
   }, 400);
+});
+$("#noteDialog").addEventListener("close", () => {
+  const n = state.notes.find((x) => x.id === openNoteId);
+  if (n) { clearTimeout(noteTimers[n.id]); saveNotes(); }
+  openNoteId = null;
+  renderNotes();
+});
+$("#noteBigClose").addEventListener("click", () => $("#noteDialog").close());
+$("#noteDialog").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });   // 바깥 누르면 닫기
+$("#noteBoard").addEventListener("keydown", (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.dataset.noteOpen !== undefined) {
+    e.preventDefault();
+    openNote(e.target.closest(".note").dataset.note);
+  }
 });
 $("#noteBoard").addEventListener("click", (e) => {
   const el = e.target.closest(".note");
   if (!el) return;
   const n = state.notes.find((x) => x.id === el.dataset.note);
   if (!n) return;
+  if (e.target.closest("[data-note-open]")) { openNote(n.id); return; }
   if (e.target.dataset.noteColor) {
     n.color = e.target.dataset.noteColor;
     saveNotes();
