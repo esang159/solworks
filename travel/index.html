@@ -197,6 +197,32 @@
   .pchip .k{font-size:10px; font-weight:600; color:#fff; background:var(--hue); border-radius:4px; padding:1px 6px; letter-spacing:.02em}
   .pchip.miss{background:var(--warn-s); color:var(--warn)}
   .askhint{font-size:12px; color:var(--ink-3)}
+  /* 장소 찾기 (카카오 장소 검색) */
+  .psearch{margin-top:16px}
+  .psbar{display:flex; align-items:center; gap:9px; background:#fff; border:1px solid var(--line-2); border-radius:12px; padding:5px 5px 5px 13px}
+  .psbar:focus-within{border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-s)}
+  .psbar > svg{width:18px; height:18px; color:var(--c-food); flex:none}
+  .psbar input{flex:1; min-width:0; border:0; outline:0; background:transparent; font-size:14.5px; padding:8px 0}
+  .psbar button{background:var(--ink); color:#fff; border-radius:9px; padding:9px 16px; font-weight:700; font-size:13.5px; flex:none}
+  .ps-res{margin-top:10px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:var(--sh-2); overflow:hidden}
+  .ps-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:9px 12px; border-bottom:1px solid var(--line); font-size:12px; color:var(--ink-3); background:var(--card-2)}
+  .ps-head b{color:var(--ink)}
+  .ps-head select{margin-left:auto; border:1px solid var(--line-2); border-radius:7px; padding:4px 8px; font-size:12.5px; background:#fff}
+  .ps-list{list-style:none; margin:0; padding:0; max-height:360px; overflow-y:auto}
+  .ps-row{display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line)}
+  .ps-row:last-child{border-bottom:0}
+  .ps-row .pi{min-width:0; flex:1}
+  .ps-row .pi b{display:block; font-size:14px}
+  .ps-row .pi .pc{display:inline-block; font-size:10.5px; font-weight:700; color:var(--hue,var(--ink-3)); background:var(--hue-s,var(--card-3)); border-radius:4px; padding:1px 6px; margin:2px 0}
+  .ps-row .pi small{display:block; font-size:12px; color:var(--ink-3); line-height:1.45}
+  .ps-row .pa{display:grid; gap:5px; justify-items:end; flex:none}
+  .ps-row .pa a{font-size:11.5px; color:var(--c-move); font-weight:600; text-decoration:none}
+  .ps-row .pa button{font-size:12px; font-weight:700; color:#fff; background:var(--brand); border-radius:7px; padding:6px 10px}
+  .ps-row .pa button.done{background:var(--ok)}
+  .ps-more{display:block; width:100%; padding:9px; font-size:12.5px; color:var(--ink-2); background:var(--card-2)}
+  .ps-msg{padding:12px; font-size:12.5px; color:var(--ink-3); line-height:1.6}
+  .ps-msg b{color:var(--ink-2)}
+  #adddlg .psearch{margin:4px 0 12px}
   .askhint b{color:var(--ink-2); font-weight:600}
 
   .heromap{position:relative}
@@ -1041,6 +1067,15 @@
           <button type="button" data-ask="친구들이랑 부산 1박 2일 바다 보러">부산 1박 2일 바다</button>
           <button type="button" data-ask="강릉에서 커피랑 바다 당일치기">강릉 커피 당일치기</button>
           <button type="button" data-ask="전주 한옥마을 2박 3일 맛집 위주로">전주 한옥마을 맛집</button>
+        </div>
+
+        <div class="psearch" id="ps-home">
+          <div class="psbar">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21c4.2-4.6 6.3-8 6.3-10.6A6.3 6.3 0 0 0 12 4a6.3 6.3 0 0 0-6.3 6.4C5.7 13 7.8 16.4 12 21Z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10.4" r="2.2" fill="currentColor"/></svg>
+            <input type="search" class="ps-q" autocomplete="off" aria-label="장소 찾기" placeholder="장소 찾기 · 예: 춘천역 근처 맛집, 춘천 아이와 갈만한 곳">
+            <button type="button" class="ps-go">찾기</button>
+          </div>
+          <div class="ps-res" hidden></div>
         </div>
       </div>
 
@@ -4680,6 +4715,11 @@ function openAdd(dayNo){
   var box=document.getElementById('add-list');
   document.getElementById('add-day').textContent=dayNo+'일차';
   box.textContent='';
+  var ps = el('div','psearch');
+  ps.innerHTML = '<div class="psbar"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
+    '<input type="search" class="ps-q" autocomplete="off" aria-label="장소 찾기" placeholder="장소 찾기 · 예: 춘천역 근처 카페"><button type="button" class="ps-go">찾기</button></div><div class="ps-res" hidden></div>';
+  box.appendChild(ps);
+  placeSearch(ps, dayNo);
   var inTrip={};
   TRIP.days.forEach(function(d){ d.items.forEach(function(i){ inTrip[i.n]=true; }); });
   [['spot','관광지',TRIP.city.spots],['food','음식점',TRIP.city.foods],['stay','숙소',TRIP.city.stays]].forEach(function(grp){
@@ -4707,6 +4747,112 @@ function openAdd(dayNo){
   box.appendChild(custom);
   dlg.showModal();
 }
+
+/* ═══ 장소 찾기 (카카오 장소 검색) ═══
+   "춘천역 근처 맛집", "춘천 아이와 갈만한 곳"처럼 쓰면 실제 가게·관광지 목록을 보여주고, 골라서 일정에 넣는다.
+   카카오 지도 JavaScript SDK 의 장소 검색을 쓴다. 키는 카카오 디벨로퍼스 > 앱 키 > JavaScript 키이고,
+   플랫폼 > Web 에 이 사이트 주소가 등록돼 있어야 동작한다 (공개용 키라 페이지에 넣어도 된다). */
+var KAKAO_JS_KEY = '';
+function kakaoKey(){ try{ return localStorage.getItem('kakao-js-key') || KAKAO_JS_KEY; }catch(e){ return KAKAO_JS_KEY; } }
+var KAKAO_WAIT = null;
+function loadKakao(done, fail){
+  if(window.kakao && kakao.maps && kakao.maps.services) return done();
+  var k = kakaoKey();
+  if(!k) return fail('nokey');
+  if(KAKAO_WAIT) return KAKAO_WAIT.push([done, fail]);
+  KAKAO_WAIT = [[done, fail]];
+  var s = document.createElement('script');
+  s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + encodeURIComponent(k) + '&libraries=services&autoload=false';
+  s.onload = function(){ kakao.maps.load(function(){ var q = KAKAO_WAIT; KAKAO_WAIT = null; q.forEach(function(f){ f[0](); }); }); };
+  s.onerror = function(){ var q = KAKAO_WAIT; KAKAO_WAIT = null; q.forEach(function(f){ f[1]('load'); }); };
+  document.head.appendChild(s);
+}
+/* 카카오 분류 → 일정 종류 */
+var PCAT = {FD6:['food','음식점','--c-food'], CE7:['food','카페','--c-food'], AT4:['spot','관광명소','--c-spot'],
+            CT1:['spot','문화시설','--c-spot'], AD5:['stay','숙박','--c-stay'], PK6:['note','주차장','--c-move'],
+            SW8:['note','지하철역','--c-move'], OL7:['note','주유소','--c-move']};
+function placeKind(p){
+  var c = PCAT[p.category_group_code];
+  if(c) return c;
+  var name = (p.category_name || '').split(' > ').pop() || '장소';
+  return ['note', name, '--ink-3'];
+}
+function addPlace(dayNo, p){
+  var day = null;
+  TRIP.days.forEach(function(d){ if(d.no === dayNo) day = d; });
+  if(!day) return false;
+  var last = day.items.length ? day.items[day.items.length - 1].tm : 10*60;
+  var k = placeKind(p);
+  var addr = p.road_address_name || p.address_name || '';
+  day.items.push(item({
+    tm: Math.min(22*60, last + 60), n: p.place_name,
+    s: (p.category_name || '').split(' > ').slice(-1)[0] + (addr ? ' · ' + addr : ''),
+    mode: TRIP.rental ? 'car' : 'walk', ico: k[0] === 'note' ? 'note' : k[0],
+    lat: +p.y, lng: +p.x, cat: k[0] === 'note' ? null : k[0], price: 0,
+    book: k[0] === 'food' ? '식당' : k[0] === 'stay' ? '숙소' : null,
+    url: p.place_url || null
+  }));
+  refresh();
+  return true;
+}
+function placeSearch(box, fixedDay){
+  var input = box.querySelector('.ps-q'), go = box.querySelector('.ps-go'), res = box.querySelector('.ps-res');
+  var cur = {q:'', page:1, items:[], end:true};
+  function dayPicker(){
+    if(fixedDay) return '<span>' + fixedDay + '일차에 넣어요</span>';
+    if(!TRIP || !TRIP.days.length) return '';
+    return '<select class="ps-day" aria-label="넣을 날">' + TRIP.days.map(function(d){
+      return '<option value="' + d.no + '">' + d.no + '일차에 넣기</option>'; }).join('') + '</select>';
+  }
+  function draw(msg){
+    res.hidden = false;
+    if(msg){ res.innerHTML = '<p class="ps-msg">' + msg + '</p>'; return; }
+    var head = '<div class="ps-head"><span>\u201c<b>' + escHtml(cur.q) + '</b>\u201d ' + cur.items.length + '곳' +
+               (cur.end ? '' : ' 이상') + '</span>' + dayPicker() + '</div>';
+    var rows = cur.items.map(function(p, i){
+      var k = placeKind(p), addr = p.road_address_name || p.address_name || '';
+      return '<li class="ps-row" style="--hue:var(' + k[2] + ');--hue-s:var(' + k[2] + '-s)"><div class="pi"><b>' + escHtml(p.place_name) + '</b>' +
+        '<span class="pc">' + escHtml(k[1]) + '</span>' +
+        '<small>' + escHtml((p.category_name || '').replace(/ > /g, ' · ')) + '</small>' +
+        '<small>' + escHtml(addr) + (p.phone ? ' · ' + escHtml(p.phone) : '') + '</small></div>' +
+        '<div class="pa"><button type="button" data-i="' + i + '">일정에 추가</button>' +
+        (p.place_url ? '<a href="' + escHtml(p.place_url) + '" target="_blank" rel="noopener">카카오맵 ›</a>' : '') + '</div></li>';
+    }).join('');
+    res.innerHTML = head + '<ul class="ps-list">' + (rows || '<li class="ps-msg">찾은 곳이 없어요. 지역 이름을 넣어 다시 찾아보세요 (예: 춘천 닭갈비).</li>') + '</ul>' +
+      (cur.end ? '' : '<button type="button" class="ps-more">더 보기</button>');
+  }
+  function run(page){
+    var q = input.value.trim();
+    if(!q) return;
+    if(page === 1){ cur = {q:q, page:1, items:[], end:true}; draw('찾는 중…'); }
+    loadKakao(function(){
+      new kakao.maps.services.Places().keywordSearch(q, function(data, status, pg){
+        if(status === kakao.maps.services.Status.ERROR) return draw('장소 검색에 실패했어요. 잠시 뒤 다시 해 주세요.');
+        cur.items = cur.items.concat(data || []);
+        cur.page = page;
+        cur.end = !pg || !pg.hasNextPage;
+        draw();
+      }, {size: 15, page: page});
+    }, function(why){
+      draw(why === 'nokey'
+        ? '장소 검색은 <b>카카오 JavaScript 키</b>를 넣으면 켜져요. 준비 중이에요.'
+        : '카카오 지도를 불러오지 못했어요. 사이트 주소(www.solworks.store)가 카카오 앱의 <b>플랫폼 › Web</b>에 등록돼 있는지 확인해 주세요.');
+    });
+  }
+  go.addEventListener('click', function(){ run(1); });
+  input.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); run(1); } });
+  res.addEventListener('click', function(e){
+    if(e.target.closest('.ps-more')){ run(cur.page + 1); return; }
+    var b = e.target.closest('button[data-i]');
+    if(!b) return;
+    var p = cur.items[+b.dataset.i];
+    var sel = res.querySelector('.ps-day');
+    var dayNo = fixedDay || (sel ? +sel.value : 1);
+    if(!TRIP){ draw('먼저 위에서 <b>일정 만들기</b>를 눌러 여행을 만든 다음 넣어 주세요.'); return; }
+    if(addPlace(dayNo, p)){ b.textContent = dayNo + '일차에 추가됨'; b.classList.add('done'); b.disabled = true; }
+  });
+}
+placeSearch(document.getElementById('ps-home'));
 
 /* ── 일정 수정 팝업 ── */
 var editTarget = null, pendingSwap = null;
