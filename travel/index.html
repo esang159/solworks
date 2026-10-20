@@ -2052,7 +2052,7 @@ function ensureCity(name, gazEntry){
     rental:false,
     spots: src ? src.spots.map(withDist) : [],
     foods: src ? src.foods.map(withDist) : [],
-    stays: src ? src.stays.map(withDist) : [{n:g.n+' 인근 숙소', lat:g.lat, lng:g.lng, price:120000, s:'숙소를 직접 골라 넣으세요'}]
+    stays: src ? src.stays.map(withDist) : [{n:g.n+' 인근 숙소', lat:g.lat, lng:g.lng, price:120000, s:'숙소를 직접 골라 넣으세요', ph:true}]
   };
   DB[name]=city;
   return city;
@@ -3282,7 +3282,7 @@ function buildTrip(q){
         var fd = takeFood(['맛집']);
         if(fd){
           items.push(item({tm:lt, n:fd.n, s:fd.s, mode:rental?'car':'walk', ico:'food', tag:foodTag(fd),
-            lat:fd.lat, lng:fd.lng, cat:'food', price:fd.price, book:'식당'}));
+            lat:fd.lat, lng:fd.lng, cat:'food', price:fd.price, book:'식당', est:fd.src==='naver'}));
           t = lt + 70;
         }
       }
@@ -3293,7 +3293,7 @@ function buildTrip(q){
       var fd2 = takeFood(['카페']);
       if(fd2){
         items.push(item({tm:ct, n:fd2.n, s:fd2.s, mode:rental?'car':'walk', ico:'food', tag:foodTag(fd2),
-          lat:fd2.lat, lng:fd2.lng, cat:'food', price:fd2.price, book:'식당'}));
+          lat:fd2.lat, lng:fd2.lng, cat:'food', price:fd2.price, book:'식당', est:fd2.src==='naver'}));
         t = ct + 60;
       }
       if(rental){
@@ -3314,7 +3314,7 @@ function buildTrip(q){
         if(dNo===1){
           /* 예약은 한 번, 값은 전체 박수만큼 */
           items.push(item({tm:st, n:stay.n+' 체크인', s:stay.s+' · '+nights+'박', mode:rental?'car':'walk', ico:'stay',
-            lat:stay.lat, lng:stay.lng, cat:'stay', price:perNight*nights, book:'숙소',
+            lat:stay.lat, lng:stay.lng, cat:'stay', price:perNight*nights, book:'숙소', est:stay.src==='naver' || !!stay.ph,
             roomPrice:stay.price, roomNights:nights,
             groupPrice: stay.price*Math.ceil(q.people/2)*nights}));
         } else {
@@ -4017,7 +4017,8 @@ function renderPlaces(panel, key){
     var card=el('button','placecard'+(i===active?' on':'')+(on0?' picked':''));
     card.type='button';
     card.setAttribute('aria-pressed', on0?'true':'false');
-    var price = x.src==='naver' ? '요금 확인' : kind==='spot' ? (x.fee?won(x.fee):'무료') : won(x.price);
+    /* 네이버 장소는 요금 정보가 없다. 예산에 넣는 어림값을 그대로 '예상'으로 보여 준다 */
+    var price = x.src==='naver' || x.ph ? (kind==='spot' ? '입장료 확인' : '예상 '+won(x.price)+(kind==='stay'?'/박':'')) : kind==='spot' ? (x.fee?won(x.fee):'무료') : won(x.price);
     var extra = '';
     if(x.src==='naver') extra = '';   /* 네이버 장소는 요금·시간 정보가 없다 */
     else if(kind==='spot') extra = x.dur||'';
@@ -4908,7 +4909,7 @@ function buildDays(container){
       var nm=el('b'); nm.textContent=it.n;
       tx.appendChild(nm);
       if(it.s) tx.appendChild(el('small',null,it.s));
-      if(it.price) tx.appendChild(el('span','cost','1인 '+won(it.price)));
+      if(it.price) tx.appendChild(el('span','cost','1인 '+(it.est ? '약 '+won(it.price)+' · 예상 금액' : won(it.price))));
       bd.appendChild(tx);
       li.appendChild(bd);
 
@@ -5128,6 +5129,8 @@ function mergePlaces(cityName, kind, places, top, maxKm){
     have.push(normName(x.n)); added.push(x);
   });
   if(top) Array.prototype.unshift.apply(list, added); else Array.prototype.push.apply(list, added);
+  /* 실제 숙소를 찾았으면 '○○ 인근 숙소' 자리 표시는 뺀다 */
+  if(added.length) for(var i=list.length-1; i>=0; i--) if(list[i].ph) list.splice(i,1);
   return added.length;
 }
 function naverStore(cityName){
@@ -5453,6 +5456,7 @@ function saveEdit(){
     var x=pendingSwap.src, k=pendingSwap.kind;
     it.lat=x.lat; it.lng=x.lng;
     it.status='need'; it.ref=null;
+    it.est = x.src==='naver' || !!x.ph;
     if(k==='food'){ it.price=x.price; it.cat='food'; it.ico='food'; it.tag=foodTag(x); it.book='식당'; }
     if(k==='spot'){ it.price=x.fee; it.cat='spot'; it.ico='spot'; it.tag='관광지'; it.book=x.fee?'입장권':null; }
     if(k==='stay'){ it.price=Math.round(x.price*Math.ceil(state.people/2)/Math.max(state.people,1)); it.cat='stay'; it.ico='stay'; it.tag='숙소'; it.book='숙소'; }
