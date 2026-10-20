@@ -49,9 +49,19 @@
     ".fb-help b{color:#ece8e2;font-weight:600}",
     ".fb-sent{margin-top:12px;border-top:1px solid #2c2a27;padding-top:10px}",
     ".fb-sent summary{font-size:12px;color:#9a948c;cursor:pointer}",
-    ".fb-sent ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px;max-height:140px;overflow:auto}",
-    ".fb-sent li{font-size:12px;color:#bdb6ad;background:#0b0a09;border-radius:8px;padding:6px 9px}",
+    ".fb-sent ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px;max-height:280px;overflow:auto}",
+    ".fb-sent li{font-size:12.5px;color:#d6d0c8;background:#0b0a09;border:1px solid #2c2a27;border-radius:10px;padding:8px 10px}",
     ".fb-sent li small{display:block;color:#7d776f}",
+    ".fb-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}",
+    ".fb-st{font:700 11px/1 system-ui,sans-serif;padding:3px 7px;border-radius:5px;background:#2c2a27;color:#bdb6ad}",
+    ".fb-st.issued{background:#332912;color:#e8c06e}.fb-st.done{background:#1b2c21;color:#7fcb9b}",
+    ".fb-top small{display:inline;margin-left:2px}",
+    ".fb-top .fb-ed{margin-left:auto;border:1px solid #34312d;background:transparent;color:#bdb6ad;border-radius:6px;padding:3px 8px;font:12px/1 inherit;cursor:pointer}",
+    ".fb-t{margin:0;white-space:pre-wrap;line-height:1.5}",
+    ".fb-reply{margin-top:6px;padding:7px 9px;border-radius:8px;background:#1b2c21;color:#d8efe0;white-space:pre-wrap;line-height:1.5}",
+    ".fb-reply b{display:block;font-size:11px;color:#7fcb9b;margin-bottom:2px}",
+    ".fb-edit textarea{min-height:80px;margin-top:4px}",
+    ".fb-edit .fb-row{margin-top:6px}.fb-edit .fb-row button{padding:8px 12px}",
     ".fb-sent a{color:#e8875f}",
     "@media print{.fb-btn,.fb-panel{display:none!important}}"
   ].join("");
@@ -75,18 +85,62 @@
     '<textarea class="fb-text" placeholder="고치고 싶은 점을 적어 주세요.&#10;예) 공고 목록 글씨가 너무 작아요 / 지도 버튼을 위로 옮겨 주세요"></textarea>' +
     '<div class="fb-row"><button type="button" class="fb-go">올리기</button><button type="button" class="fb-x">닫기</button></div>' +
     '<p class="fb-help fb-msg"></p>' +
-    '<details class="fb-sent"><summary>이 기기에서 보낸 요청</summary><ul></ul>' +
+    '<details class="fb-sent"><summary>보낸 요청</summary><ul></ul>' +
     '<p class="fb-help"><a href="' + REPO + '/issues" target="_blank" rel="noopener">GitHub에서 전체 보기</a></p></details>';
 
   var text = panel.querySelector(".fb-text");
   var go = panel.querySelector(".fb-go");
 
+  // 로그인해 있으면 Firebase 의 내 요청 목록(상태·답변 포함), 아니면 이 기기에서 보낸 기록
+  var cloud = null, editing = null;
+  var STATUS = { new: ["접수 대기", ""], issuing: ["접수 대기", ""], issued: ["처리 중", "issued"], done: ["처리 완료", "done"] };
   function renderSent() {
+    var ul = panel.querySelector(".fb-sent ul");
+    if (cloud) {
+      ul.innerHTML = cloud.length ? cloud.map(function (f) {
+        var st = STATUS[f.status] || ["접수 대기", ""];
+        var label = st[0] + (f.issue && f.status !== "new" ? " · #" + f.issue : "") + (f.edited ? " · 수정 반영 대기" : "");
+        var top = '<div class="fb-top"><span class="fb-st ' + st[1] + '">' + esc(label) + "</span><small>" + esc(f.where || "") + " · " + esc(f.at || "") +
+          '</small><button type="button" class="fb-ed" data-id="' + esc(f.id) + '">' + (editing === f.id ? "닫기" : "수정") + "</button></div>";
+        var body = editing === f.id
+          ? '<div class="fb-edit"><textarea class="fb-et">' + esc(f.text || "") + '</textarea><div class="fb-row"><button type="button" class="fb-go fb-save" data-id="' + esc(f.id) + '">고친 내용 저장</button></div></div>'
+          : '<p class="fb-t">' + esc(f.text || "") + "</p>";
+        var reply = f.reply ? '<div class="fb-reply"><b>답변' + (f.doneAt ? " · " + esc(f.doneAt) : "") + "</b>" + esc(f.reply) + "</div>" : "";
+        return "<li>" + top + body + reply + "</li>";
+      }).join("") : "<li>아직 보낸 요청이 없어요</li>";
+      return;
+    }
     var list = load(SENT, []);
-    panel.querySelector(".fb-sent ul").innerHTML = list.length
+    ul.innerHTML = list.length
       ? list.slice().reverse().map(function (s) { return "<li>" + esc(s.text.slice(0, 80)) + "<small>" + esc(s.where) + " · " + esc(s.at) + "</small></li>"; }).join("")
       : "<li>아직 없어요</li>";
   }
+  function hookCloud() {
+    if (!window.solFeedback || !window.solFeedback.onList) return;
+    window.solFeedback.onList(function (list) {
+      cloud = window.solFeedback.ready() ? list : null;
+      if (panel.classList.contains("open") && !editing) renderSent();
+    });
+  }
+  window.addEventListener("sol-feedback-ready", hookCloud);
+  hookCloud();
+  panel.querySelector(".fb-sent ul").addEventListener("click", function (e) {
+    var ed = e.target.closest(".fb-ed");
+    if (ed) { editing = editing === ed.dataset.id ? null : ed.dataset.id; renderSent(); return; }
+    var sv = e.target.closest(".fb-save");
+    if (!sv) return;
+    var ta = sv.closest("li").querySelector(".fb-et");
+    var val = ta.value.trim();
+    if (!val) return;
+    sv.disabled = true; sv.textContent = "저장 중…";
+    window.solFeedback.edit(sv.dataset.id, val).then(function () {
+      editing = null; renderSent();
+      msg.innerHTML = "<b>고쳤어요 ✓</b> 이미 처리 중인 요청이면 고친 내용이 이슈에 덧붙여져요.";
+    }).catch(function (err) {
+      sv.disabled = false; sv.textContent = "고친 내용 저장";
+      msg.textContent = "저장하지 못했어요 (" + (err && err.message || "연결 오류") + ")";
+    });
+  });
   var msg = panel.querySelector(".fb-msg");
   var direct = function () { return !!(window.solFeedback && window.solFeedback.ready()); };
   function hint() {
@@ -100,6 +154,7 @@
     panel.querySelector(".fb-place").textContent = where();
     text.value = load(DRAFT, "");
     sync(); renderSent(); hint();
+    if (cloud && cloud.length) panel.querySelector(".fb-sent").open = true;
     panel.classList.add("open");
     btn.setAttribute("aria-expanded", "true");
     text.focus();
