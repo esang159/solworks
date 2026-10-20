@@ -3914,6 +3914,8 @@ function renderPlaces(panel, key){
       if(n){ placeActive[key]=0; placeTheme[key]='전체'; state.filters[key]=[]; save(); renderTiles(key); }
       var h2=document.querySelector('#fp-'+key+' .prechint');
       if(h2) h2.textContent = n ? '"'+w+'" '+n+'곳을 맨 앞에 넣었어요 · 눌러서 표시하세요'
+                               : items.length && !places.some(function(x){ return kindOk(kind, x.cat); })
+                                 ? '찾은 곳이 '+{spot:'관광지가', food:'음식점이', stay:'숙소가'}[kind]+' 아니에요 · 맞는 탭에서 찾아 주세요'
                                : items.length ? '찾은 곳이 이미 목록에 있거나 '+naverRadius()+'km 밖이에요 · 반경을 넓혀 보세요' : '"'+w+'"(으)로 찾은 곳이 없어요';
     }, function(why){
       fgo.disabled=false;
@@ -5018,7 +5020,7 @@ function naverSearch(q, done, fail){
 /* 네이버 지역 검색은 검색어 하나에 5곳까지만 주고 다음 페이지도 없다(직접 확인).
    그래서 처음엔 앞의 두 검색어로 채우고, [더 보기]를 누를 때마다 다음 검색어 두 개로 더 찾는다. */
 var NAVER_Q = {
-  spot:['가볼만한곳','관광명소','명소','공원','박물관','전망대','체험','산책','데이트','아이와 가볼만한곳','사진 명소','시장'],
+  spot:['가볼만한곳','관광명소','명소','공원','박물관','전망대','체험','산책로','미술관','아이와 가볼만한곳','유적지','전통시장'],
   food:['맛집','카페','현지인 맛집','한식','고기','국수','해산물','브런치','디저트','분식','술집','빵집'],
   stay:['호텔','펜션','리조트','게스트하우스','한옥스테이','글램핑','모텔','풀빌라']
 };
@@ -5046,9 +5048,17 @@ function themeTags(cat){
   THEME_RULES.forEach(function(r){ if(r[1].test(cat) && out.indexOf(r[0])<0) out.push(r[0]); });
   return out.slice(0, 2);
 }
+/* 네이버는 "관광지 데이트"로 찾아도 카페·식당을 섞어 준다. 분류를 보고 그 탭에 맞는 곳만 받는다 */
+var NOT_SPOT = /병원|의원|약국|학원|부동산|은행|편의점|주유소|정비|미용|네일|세탁|사무|회사|기업|공공기관|행정/;
+function kindOk(kind, cat){
+  var g = naverGroup(cat || '');
+  if(kind === 'food') return g === 'FD6' || g === 'CE7';
+  if(kind === 'stay') return g === 'AD5';
+  return ['FD6','CE7','AD5','PK6','SW8'].indexOf(g) < 0 && !NOT_SPOT.test(cat || '');
+}
 function toPlace(p, kind){
   var road = p.road_address_name || p.address_name || '';
-  var o = {n:p.place_name, lat:+p.y, lng:+p.x, tags:themeTags(p.category_name || ''), src:'naver', url:p.place_url,
+  var o = {n:p.place_name, lat:+p.y, lng:+p.x, tags:themeTags(p.category_name || ''), src:'naver', url:p.place_url, cat:p.category_name || '',
            s:(p.category_name||'').split(' > ').slice(-1)[0] + (road ? ' · ' + road.split(' ').slice(1, 4).join(' ') : '')};
   if(kind==='spot'){ o.dur='1시간'; o.fee=0; } else o.price=NAVER_DEF[kind];
   return o;
@@ -5059,6 +5069,7 @@ function mergePlaces(cityName, kind, places, top, maxKm){
   var list = cityList(c, kind), have = list.map(function(x){ return normName(x.n); }), added = [];
   places.forEach(function(x){
     if(x.tags) x.tags = x.tags.filter(function(t){ return t !== '네이버'; });   /* 예전 버전이 저장한 표시 지우기 */
+    if(x.src === 'naver' && !kindOk(kind, x.cat || (x.s || '').split(' · ')[0])) return;   /* 다른 탭 분류는 빼기 (예전에 저장한 것 포함) */
     if(x.lat==null || isNaN(x.lat) || have.indexOf(normName(x.n))>-1) return;
     if(maxKm && kmBetween({lat:c.lat,lng:c.lng}, x) > maxKm) return;
     have.push(normName(x.n)); added.push(x);
