@@ -67,6 +67,8 @@ jobs:
           tok = r.json().get("idToken")
           base = "https://solworks-relay.minsol2003.workers.dev"
           print("health:", requests.get(base + "/health", timeout=20).text)
+          o = requests.get(base + "/odsay/path", params={"sx": 126.9707, "sy": 37.5547, "ex": 126.9770, "ey": 37.5788}, headers={"Authorization": "Bearer " + tok, "Origin": "https://www.solworks.store"}, timeout=30)
+          print("[ODsay 서울역→경복궁] HTTP", o.status_code, o.text[:200])
           for q in ["춘천역 맛집", "경복궁"]:
               s = requests.get(base + "/naver/local", params={"q": q}, headers={"Authorization": "Bearer " + tok, "Origin": "https://www.solworks.store"}, timeout=20)
               print(f"[{q}] HTTP {s.status_code} CORS={s.headers.get('access-control-allow-origin')}")
