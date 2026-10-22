@@ -1139,6 +1139,30 @@
     .bkrow{padding:10px 12px}
     .bkrow .btn{margin-left:auto}
   }
+
+  /* ═══ 고르기와 만들기 분리 (2026-10-22) ═══ */
+  .fillopt{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-2); cursor:pointer; white-space:nowrap}
+  .fillopt input{width:16px; height:16px; accent-color:var(--brand)}
+  #gen-btn.pending{box-shadow:0 0 0 0 rgba(232,96,12,.5); animation:genpulse 1.6s ease-out infinite}
+  @keyframes genpulse{0%{box-shadow:0 0 0 0 rgba(232,96,12,.45)} 70%{box-shadow:0 0 0 10px rgba(232,96,12,0)} 100%{box-shadow:0 0 0 0 rgba(232,96,12,0)}}
+  @media (max-width:640px){
+    /* 고르는 동안 [일정 만들기]가 항상 손 닿는 곳에 */
+    .sumrow{position:sticky; bottom:0; z-index:30; border-radius:0; margin:0 -1px; background:#fff;
+            box-shadow:0 -6px 18px -8px rgba(20,28,24,.25); padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px))}
+    .summary{display:none}
+    .genwrap .track{display:none}
+    .genwrap .gmode{display:none}
+    .fillopt{order:2; width:100%}
+    .fbar{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none}
+    .fbar::-webkit-scrollbar{display:none}
+    .fbar > *{flex:0 0 auto; min-width:92px}
+    .placewrap{grid-template-columns:minmax(0,1fr)}
+    .placemap{display:none}
+    /* 아래 [일정 만들기] 줄과 겹치지 않게 수정 요청 버튼을 위로 */
+    .fb-btn{bottom:calc(132px + env(safe-area-inset-bottom,0px)) !important; width:44px !important; height:44px !important; border-radius:14px !important}
+    .fb-panel{bottom:calc(184px + env(safe-area-inset-bottom,0px)) !important}
+    .genwrap .gstate{font-size:11.5px}
+  }
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important; scroll-behavior:auto !important}}
 </style>
 
@@ -1271,6 +1295,7 @@
         <div id="fpanels"></div>
         <div class="sumrow">
           <div class="summary" id="summary"><span>선택한 조건</span></div>
+          <label class="fillopt"><input type="checkbox" id="fill-auto" checked> 빈 자리는 추천으로 채우기</label>
           <div class="genwrap">
             <span class="gcol">
               <span class="gmode" id="gen-mode">추천 기반</span>
@@ -1279,7 +1304,7 @@
             <span class="track"><i id="gen-bar"></i></span>
             <button class="btn brand" type="button" id="gen-btn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 2.1 5.3L19.5 10l-5.4 1.7L12 17l-2.1-5.3L4.5 10l5.4-1.7L12 3Z" fill="currentColor"/></svg>
-              이 조건으로 다시 짜기
+              일정 만들기
             </button>
           </div>
         </div>
@@ -2447,6 +2472,7 @@ try{
     if(pv.naver) state.naver = pv.naver;
     if(pv.radius) state.radius = pv.radius;
     if(pv.plan) state.plan = pv.plan;
+    if(pv.fill === false) state.fill = false;
     if(pv.savedAt) state.savedAt = pv.savedAt;
   }}
 }catch(e){}
@@ -2463,8 +2489,11 @@ function save(){
 /* ── 지금 보고 있는 여행을 통째로 기억한다 ──
    문장·고른 조건으로 다시 짜면 손으로 고친 일정(삭제·시간·추가·순서)이 사라지므로, 일정 자체를 저장해 두고
    새로 열 때 그대로 되살린다. 새로 '일정 생성'을 누르면 그때의 일정으로 바뀐다. */
+/* 여행 만들기 화면에서 목적지·조건을 고르는 동안(DRAFTING)은 '고르는 중'일 뿐이라 저장하지 않는다.
+   [일정 만들기]를 눌러야 그때의 일정이 내 일정이 된다. */
+var DRAFTING = false;
 function saveTrip(){
-  if(!TRIP) return;
+  if(!TRIP || DRAFTING) return;
   state.plan = {
     ask: ask.value, lock: LOCK, q: TRIP.q,
     days: TRIP.days.map(function(d){
@@ -3127,6 +3156,12 @@ function miniMap(box, day){
 var VIEWS = {home:'view-home', cart:'view-cart', explore:'view-explore', shop:'view-shop'};
 function go(view){
   if(!VIEWS[view]) view='home';
+  if(view==='cart' && DRAFTING){
+    /* 고르기만 하고 [일정 만들기]를 안 눌렀으면, 전에 만들어 둔 일정을 그대로 보여 준다 */
+    DRAFTING = false;
+    genBtn.classList.remove('pending');
+    if(!restorePlan()) saveTrip();
+  }
   state.view=view;
   Object.keys(VIEWS).forEach(function(k){ document.getElementById(VIEWS[k]).hidden = (k!==view); });
   Array.prototype.forEach.call(document.querySelectorAll('.nav button'), function(b){
@@ -3300,12 +3335,14 @@ function buildTrip(q){
     return queue.splice(at,1)[0];
   }
   /* anchored=false 면 거리를 안 본다. 그날 첫 관광지는 멀어도 대표 명소로 간다 */
+  var FILL = state.fill !== false;   /* 끄면 직접 고른 곳만 넣는다 */
   function takeSpot(anchored){
     while(qSpot.length){
       var x=nearestOf(qSpot);
       var i=city.spots.indexOf(x);
       if(i>-1 && usedSpot.indexOf(i)<0){ usedSpot.push(i); return x; }
     }
+    if(!FILL) return null;
     return pick(city.spots, q.interests, usedSpot, anchored ? here() : null);
   }
   function takeFood(extra){
@@ -3314,9 +3351,10 @@ function buildTrip(q){
       var i=city.foods.indexOf(x);
       if(i>-1 && usedFood.indexOf(i)<0){ usedFood.push(i); return x; }
     }
+    if(!FILL) return null;
     return pick(city.foods, q.interests.concat(extra||[]), usedFood, here());
   }
-  var theStay = qStay[0] || (city.stays && city.stays[0]);
+  var theStay = qStay[0] || (FILL ? (city.stays && city.stays[0]) : null);
   var rental = city.rental || q.rental;
   var dp = String(q.date||'2026-10-09').split('-');
   var base = new Date(parseInt(dp[0],10), parseInt(dp[1],10)-1, parseInt(dp[2],10));
@@ -3368,7 +3406,7 @@ function buildTrip(q){
       }
     } else {
       t = 9*60+30;
-      var hstay = theStay || (city.stays && city.stays[0]);
+      var hstay = theStay;
       if(hstay){
         items.push(item({tm:t, n:'숙소 출발', s:hstay.n, mode:'walk', ico:'stay',
           lat:hstay.lat, lng:hstay.lng, cat:null, book:null}));
@@ -3416,7 +3454,7 @@ function buildTrip(q){
       items.push(item({tm:t+durMin, n:depName+' 도착', s:'여행 종료', mode:'walk', ico:'note',
         lat:hub.lat, lng:hub.lng, cat:null, book:null, pair:'back', pairRole:'to'}));
     } else {
-      var stay = theStay || (city.stays && city.stays[0]);
+      var stay = theStay;
       var st = Math.max(t, 17*60);
       if(stay){
         var perNight = Math.round(stay.price*Math.ceil(q.people/2)/Math.max(q.people,1));
@@ -3435,7 +3473,7 @@ function buildTrip(q){
       var dn = takeFood(['맛집']);
       if(dn){
         items.push(item({tm:Math.max(st+90, 18*60+30), n:dn.n, s:dn.s, mode:rental?'car':'walk', ico:'food', tag:foodTag(dn),
-          lat:dn.lat, lng:dn.lng, cat:'food', price:dn.price, book:'식당'}));
+          lat:dn.lat, lng:dn.lng, cat:'food', price:dn.price, book:'식당', est:dn.src==='naver'}));
       }
     }
 
@@ -3947,7 +3985,7 @@ function pickCity(c){
   var q=parseQuery(ask.value);
   var rest=q.interests.length ? ' ' + q.interests.join(' ') : '';
   ask.value = c + ' ' + durLabel(q.nights) + rest;
-  applyAsk(true);
+  draftTrip(draftQuery(), c+'(으)로 정했어요');
 }
 var placeTheme = {}, placeActive = {}, placeDay = {};
 function placePool(kind){
@@ -4375,7 +4413,7 @@ function renderSummary(){
   var rmz = document.getElementById('result-mode');
   if(rmz) rmz.textContent = picksN + '곳';
   document.getElementById('gen-mode').textContent =
-    '조건 '+count+'개' + (picksN ? ' · 직접 고른 곳 '+picksN+'곳' : ' · 나머지는 추천으로');
+    '조건 '+count+'개' + (picksN ? ' · 직접 고른 곳 '+picksN+'곳' : '') + (state.fill === false ? ' · 고른 곳만' : ' · 빈 자리는 추천');
 }
 function selectFilter(key){
   FKEYS.forEach(function(k){
@@ -4407,7 +4445,16 @@ function runGenerate(){
     }
   },400);
 }
-genBtn.addEventListener('click', function(){ applyAsk(true); });
+genBtn.addEventListener('click', commitDraft);
+var fillBox = document.getElementById('fill-auto');
+if(fillBox){
+  fillBox.checked = state.fill !== false;
+  fillBox.addEventListener('change', function(){
+    state.fill = fillBox.checked; save();
+    renderSummary();
+    if(state.view !== 'cart') draftTrip(draftQuery(), fillBox.checked ? '빈 자리는 추천으로 채워요' : '직접 고른 곳만 넣어요');
+  });
+}
 
 /* ═══ 자연어 입력 ═══ */
 var ask=document.getElementById('ask'), parsedBox=document.getElementById('parsed');
@@ -4469,6 +4516,8 @@ function syncFilters(q){
 }
 function applyAsk(animate){
   LOCK = {};
+  DRAFTING = false;
+  genBtn.classList.remove('pending');
   var q = parseQuery(ask.value);
   if(!showParsed(q)) { genState.textContent='지역을 찾지 못했어요. 예: "당일치기로 춘천에 놀러가고 싶어"'; return; }
   var trip = buildTrip(q);
@@ -4491,9 +4540,8 @@ function syncSentence(durLabel){
     showParsed(parseQuery(ask.value));
   }
 }
-function setupChanged(id, val){
-  LOCK[id]=val;
-  if(id==='dep-nights') syncSentence(durLabel(parseInt(val,10)));
+/* 문장 + 위에서 직접 고른 날짜·기간·출발지·인원(LOCK) */
+function draftQuery(){
   var q=parseQuery(ask.value);
   Object.keys(LOCK).forEach(function(k){
     if(k==='dep-nights'){ q.nights=parseInt(LOCK[k],10); q.durLabel=durLabel(q.nights); }
@@ -4502,8 +4550,36 @@ function setupChanged(id, val){
     if(k==='dep-date')   q.date=LOCK[k];
   });
   if(q.city === q.from) q.from = (q.from==='서울') ? '대전' : '서울';
+  return q;
+}
+/* 고르는 중: 아래 탭(관광지·음식점·숙박)이 그 도시 기준으로 바뀌도록 내부에서만 짜 두고, 화면 이동·저장은 하지 않는다 */
+function draftTrip(q, msg){
   if(!showParsed(q)) return;
   var trip=buildTrip(q); if(!trip) return;
+  DRAFTING = true;
+  state.people=q.people; renderTrip(trip); syncSetup(q); syncFilters(q);
+  genBar.style.width='0%';
+  genState.textContent = msg + ' · 갈 곳을 고르고 [일정 만들기]를 누르세요';
+  genBtn.classList.add('pending');
+}
+/* [일정 만들기]: 지금 고른 조건으로 짜서 내 일정으로 만든다 */
+function commitDraft(){
+  var q=draftQuery();
+  if(!showParsed(q)) return;
+  var trip=buildTrip(q); if(!trip) return;
+  DRAFTING = false;
+  genBtn.classList.remove('pending');
+  state.people=q.people; renderTrip(trip); syncSetup(q); syncFilters(q);
+  runGenerate();
+}
+function setupChanged(id, val){
+  LOCK[id]=val;
+  if(id==='dep-nights') syncSentence(durLabel(parseInt(val,10)));
+  var q=draftQuery();
+  if(state.view !== 'cart'){ draftTrip(q, q.city+' · '+q.durLabel+'(으)로 바꿨어요'); return; }
+  if(!showParsed(q)) return;
+  var trip=buildTrip(q); if(!trip) return;
+  DRAFTING = false;
   state.people=q.people; renderTrip(trip); syncSetup(q); syncFilters(q);
   genBar.style.width='100%';
   genState.textContent='일정을 다시 맞췄습니다 · '+q.durLabel;
