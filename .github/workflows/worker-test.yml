@@ -32,6 +32,15 @@ jobs:
           echo "== 예전 개발자센터"
           curl -sS -w "\nHTTP %{http_code}\n" "https://openapi.naver.com/v1/search/local.json?$q" \
             -H "X-Naver-Client-Id: $NAVER_ID" -H "X-Naver-Client-Secret: $NAVER_SECRET" | head -c 300; echo
+      - name: 정시 수집 토큰 확인 (GH_DISPATCH_TOKEN)
+        env:
+          T: ${{ secrets.GH_DISPATCH_TOKEN }}
+        run: |
+          [ -n "$T" ] && echo "GH_DISPATCH_TOKEN 있음" || { echo "GH_DISPATCH_TOKEN 없음"; exit 0; }
+          echo "== 워크플로 읽기"; curl -sS -o /dev/null -w "HTTP %{http_code}\n" -H "Authorization: Bearer $T" -H "Accept: application/vnd.github+json" https://api.github.com/repos/esang159/solworks/actions/workflows/crawl.yml
+          echo "== 실행 요청 (오늘 이미 했으면 워크플로가 건너뜀, 카톡 안 감)"
+          curl -sS -o /dev/null -w "HTTP %{http_code} (204면 성공)\n" -X POST -H "Authorization: Bearer $T" -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/esang159/solworks/actions/workflows/crawl.yml/dispatches -d '{"ref":"claude/wonderful-cerf-4b9ppx","inputs":{"scheduled":"true"}}'
       - name: ODsay를 서버에서 부를 수 있는지 (지금 페이지에 있는 키로)
         run: |
           k="s0BOd9kJGscmQnFxFYmC6w"
