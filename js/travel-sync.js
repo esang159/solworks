@@ -58,6 +58,9 @@ async function pull() {
   if (r.savedAt > lt) {
     if (sessionStorage.getItem("travel-pulled") === String(r.savedAt)) return;
     sessionStorage.setItem("travel-pulled", String(r.savedAt));
+    // 다시 여는 사이에 이 화면의 늦은 저장(검색 결과 등)이 받아 온 내용을 덮어쓰지 않게 저장을 멈춘다
+    window.travelSync.frozen = true;
+    clearTimeout(timer); timer = null; pending = null;
     localStorage.setItem(KEY, r.value);
     location.reload();
   } else if (lt > r.savedAt && local) {

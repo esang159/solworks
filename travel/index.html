@@ -17,7 +17,7 @@
   }, 15000);
 </script>
 <script type="module" src="../js/auth-guard.js?v=20261020n" onerror="window.solGuardFail()"></script>
-<script type="module" src="../js/travel-sync.js?v=20261020a"></script>
+<script type="module" src="../js/travel-sync.js?v=20261022a"></script>
 <link rel="icon" href="../favicon.ico" sizes="any"><link rel="icon" type="image/png" href="../assets/favicon/favicon-32.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Nanum+Pen+Script&display=swap">
 <style>
@@ -191,6 +191,12 @@
   @media (max-width:640px){
     .setupbar .sf{border-right:0; flex:1 1 42%}
     .setupbar .sf-note{display:none}
+    .setupbar .sf > span{white-space:nowrap}
+    .setupbar .sf:first-child{flex-wrap:wrap; width:100%}
+    .datewrap{flex-wrap:wrap; min-width:0}
+    .sec p{display:none}
+    .brand b{font-size:16px}
+    .brand .mk{display:none}
   }
   .parsed{display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin-top:11px; min-height:26px}
   .parsed .lb{font-size:11px; color:var(--ink-3); font-family:"IBM Plex Mono",monospace; letter-spacing:.06em}
@@ -1047,14 +1053,98 @@
     .movehead .mnote{margin-left:0; flex:1 1 100%}
     .moverow .mtime{min-width:54px; font-size:15px}
   }
+
+  /* ═══ 다듬기 (2026-10-22): 덜어내고 읽기 쉽게 ═══ */
+  .util-in{padding:4px 20px}
+  .hero-in{padding:26px 20px 24px; gap:28px}
+  .hero h1{font-size:clamp(24px,3vw,32px)}
+  .hero .sub{max-width:52ch}
+  .quick{margin-top:12px}
+  .sec .n{display:none}
+  .sec h2{font-size:19px}
+  .planner{grid-template-columns:minmax(0,1fr)}
+  .phead{margin-bottom:6px}
+  .metaline{margin-bottom:16px}
+  #cart-note{display:inline-flex; margin:0 0 14px}
+  /* 일정 블록: 한 줄 이동, 작은 예약 줄 */
+  .blk{padding:9px 11px 10px}
+  .hopbar{padding:6px 10px; margin-bottom:7px; align-items:center}
+  .hoptop{align-items:center}
+  .hopbar .ht small{display:inline; margin-left:6px; font-weight:600}
+  .hopbar .hnote{display:block}
+  .hoplinks{display:none; flex-wrap:wrap}
+  .hopbar.open .hoplinks{display:flex}
+  .hopbar.real .hsteps{display:none}
+  .hopbar.real.open .hsteps{display:grid}
+  .hoptog{flex:none; margin-left:auto; font-size:10.5px; font-weight:700; color:var(--c-move); border:1px solid var(--line-2); background:#fff; border-radius:5px; padding:2px 8px}
+  .hoptog::after{content:" ▾"}
+  .hopbar.open .hoptog::after{content:" ▴"}
+  .irow{margin-top:7px; padding-top:0; border-top:0; display:flex; align-items:center; gap:8px}
+  .irow .mini{margin-left:auto; font-size:11px; padding:3px 9px}
+  .badge.chg{background:var(--c-plan-s); color:var(--c-plan)}
+  .blk-t .cost{font-size:11.5px}
+  /* 예약 체크리스트: 접어 두기 */
+  .bkfold{margin-top:22px; border:1px solid var(--line); border-radius:12px; background:#fff}
+  .bkfold > summary{list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px; padding:13px 16px; font-size:15px}
+  .bkfold > summary::-webkit-details-marker{display:none}
+  .bkfold > summary::after{content:"펼치기"; margin-left:auto; font-size:12px; color:var(--ink-3)}
+  .bkfold[open] > summary::after{content:"접기"}
+  .bkfold > summary span{font-size:12.5px; color:var(--ink-3)}
+  .bkfold #booking-list{padding:0 14px 14px}
+  /* 예약 기록 대화상자 */
+  .bk-seg{display:inline-flex; border:1px solid var(--line-2); border-radius:8px; overflow:hidden}
+  .bk-seg button{padding:6px 12px; font-size:12.5px; background:#fff; color:var(--ink-2)}
+  .bk-seg button[aria-pressed="true"]{background:var(--ink); color:#fff; font-weight:700}
+  .bk-field input[type="text"]{border:1px solid var(--line-2); border-radius:7px; padding:6px 10px; font-size:13px; width:min(220px,100%)}
+  .bk-money .won{display:inline-flex; align-items:center; gap:4px; font-family:"IBM Plex Mono",monospace}
+  .bk-money input{width:120px; border:1px solid var(--line-2); border-radius:7px; padding:6px 8px; font-size:13px; text-align:right; font-family:inherit}
+  #bkdlg .dlg-actions .go{background:var(--brand); border-color:var(--brand); color:#fff}
+  .bk-sub{margin-top:14px; padding-top:10px; border-top:1px solid var(--line); font-size:11.5px; font-weight:700; color:var(--ink-3); letter-spacing:.04em}
+  /* 추천 코스: 가짜 작성자·좋아요 숨김 */
+  .exwho, .exlike{display:none}
+  footer .foot-in{justify-content:center; text-align:center}
+  #view-cart{padding-top:22px}
+  .brand b{white-space:nowrap}
+  .datechip b{white-space:nowrap}
+  .keybox{padding:8px 12px; font-size:12px}
+  .keybox button{font-size:11.5px; padding:3px 9px}
+  /* 좁은 화면: 일정표를 먼저, 지도·비용은 아래로 */
+  @media (max-width:1040px){
+    .split{display:flex; flex-direction:column}
+    .split > aside.rail{order:2; width:100%}
+    .split > div{order:1; width:100%}
+    .rail.sticky{position:static}
+  }
+  /* ── 휴대폰 ── */
+  @media (max-width:640px){
+    .topbar-in{padding:8px 14px; gap:8px; flex-wrap:nowrap}
+    .nav{flex-wrap:nowrap; overflow-x:auto; margin-left:auto; scrollbar-width:none}
+    .nav::-webkit-scrollbar{display:none}
+    .nav button{padding:7px 9px; font-size:13px; white-space:nowrap}
+    .nav button[aria-current="page"]::after{bottom:-9px}
+    .hero-in{padding:18px 16px 18px}
+    .heromap{display:none}
+    .wrap{padding-left:14px; padding-right:14px}
+    .setupbar{gap:0}
+    .setupbar .sf{padding:7px 10px}
+    .setupbar .sf-note{display:none}
+    .mapbox.tall{aspect-ratio:1/1}
+    .maplegend{display:none}
+    .mapsrc{display:none}
+    .days{gap:10px}
+    ol.line{padding:9px}
+    .blk-h .opbtn{min-width:28px; min-height:28px}
+    .tripbar{gap:8px 12px}
+    .keybox{font-size:12px}
+    .bkrow{padding:10px 12px}
+    .bkrow .btn{margin-left:auto}
+  }
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important; scroll-behavior:auto !important}}
 </style>
 
 <div class="util">
   <div class="util-in">
     <a href="../#hub" class="sol-back" title="Sol Works 서비스 선택으로">← Sol Works</a>
-    <span>실시간 예약 연동 · KTX · 국내선 · 숙소</span>
-    <span class="sp"><a href="#" onclick="return false">고객센터</a><a href="#" onclick="return false">앱 다운로드</a></span>
   </div>
 </div>
 
@@ -1066,9 +1156,9 @@
     </button>
     <nav class="nav" aria-label="주요 메뉴">
       <button type="button" data-go="home">여행 만들기</button>
-      <button type="button" data-go="explore">둘러보기</button>
-      <button type="button" data-go="shop">특산물 쇼핑</button>
-      <button type="button" class="cartbtn" data-go="cart">장바구니 <span class="n" id="cart-count">0</span></button>
+      <button type="button" data-go="explore">추천 코스</button>
+      <button type="button" data-go="shop" hidden>특산물</button>
+      <button type="button" class="cartbtn" data-go="cart">내 일정 <span class="n" id="cart-count">0</span></button>
     </nav>
   </div>
 </header>
@@ -1078,9 +1168,8 @@
   <section class="hero">
     <div class="hero-in">
       <div>
-        <p class="eyebrow" style="margin-bottom:10px">STEP 01 &nbsp;·&nbsp; 말하듯이 쓰기</p>
-        <h1>어디로 갈지만 정하세요.<br><em>동선은 지도가</em> 짭니다.</h1>
-        <p class="sub">목적지와 날짜를 넣으면 이동 구간·관광지·식당·숙소를 실제 지도 위에 배치하고, 예약 상태와 예상 비용까지 한 번에 정리합니다.</p>
+        <h1>어디로 갈지 <em>한 줄로</em> 적으세요</h1>
+        <p class="sub">"부산 1박 2일 바다"처럼 쓰면 이동·관광지·식당·숙소를 지도 위에 이어 붙인 일정이 만들어져요. 아래에서 날짜와 갈 곳을 다듬으면 바로 다시 짜요.</p>
 
         <div class="askbar">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -1119,9 +1208,9 @@
   </section>
 
   <div class="wrap">
-    <div class="sec"><span class="n">02</span><h2>날짜와 취향 다듬기</h2><p id="sec-count">조건 0개 선택됨</p></div>
+    <div class="sec"><h2>날짜와 갈 곳 다듬기</h2><p id="sec-count">조건 0개 선택됨</p></div>
 
-    <div class="mode">
+    <div class="mode" hidden>
       <p class="modehint">아래 <b>이동 · 관광지 · 음식점 · 숙박</b> 탭에서 직접 고르거나, 각 탭의 <b>[추천으로 고르기]</b>를 누르면 대신 골라 드립니다.</p>
       <div class="autochips" id="autochips">
         <span class="autochip"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1M7.7 16.3l-2.1 2.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>내 데이터 기반 추천<small>MY DATA-DRIVEN RECS</small></span>
@@ -1190,13 +1279,13 @@
             <span class="track"><i id="gen-bar"></i></span>
             <button class="btn brand" type="button" id="gen-btn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 2.1 5.3L19.5 10l-5.4 1.7L12 17l-2.1-5.3L4.5 10l5.4-1.7L12 3Z" fill="currentColor"/></svg>
-              일정 생성
+              이 조건으로 다시 짜기
             </button>
           </div>
         </div>
       </section>
 
-      <aside class="rail">
+      <aside class="rail" hidden>
         <section class="card">
           <div class="card-h"><h3>특별서비스</h3><span class="eyebrow" style="margin-left:auto">지역특산물</span></div>
           <div class="card-b" style="padding:8px 8px 12px">
@@ -1212,11 +1301,9 @@
 
 <!-- ══════ 장바구니 ══════ -->
 <main id="view-cart" class="wrap" hidden>
-  <p class="crumb">여행 만들기 / <b>장바구니</b></p>
   <div class="phead">
     <h1 id="r-title">여행 일정</h1>
-    <span class="stamp">임시 저장됨</span>
-    <span class="idno trip-id">NO-00000000-000</span>
+    <span class="idno trip-id" hidden>NO-00000000-000</span>
   </div>
   <p class="metaline">
     <span class="trip-date">–</span>
@@ -1224,9 +1311,10 @@
     <span>이동 <b class="trip-move">–</b></span>
     <span>담은 항목 <b id="cart-items">0개</b></span>
     <span>예약 필요 <b style="color:var(--warn)" id="cart-wait">0건</b></span>
-    <span>직접 고른 곳 <b id="result-mode">0곳</b></span>
+    <span hidden>직접 고른 곳 <b id="result-mode">0곳</b></span>
   </p>
-  <p style="margin:-10px 0 20px; font-size:12.5px; color:var(--ink-3)">입력한 문장 <b style="color:var(--ink-2);font-weight:600" id="r-query">—</b></p>
+  <p hidden>입력한 문장 <b id="r-query">—</b></p>
+  <span class="note" id="cart-note" hidden></span>
 
   <div class="split">
     <aside class="rail sticky">
@@ -1248,9 +1336,8 @@
       </section>
 
       <section class="card">
-        <div class="card-h"><h3>최종 일정 마무리</h3></div>
+        <div class="card-h"><h3>예상 비용</h3></div>
         <div class="card-b">
-          <p style="font-size:12px; color:var(--ink-3); margin-bottom:14px">예약 확정 및 결제 진행</p>
           <div class="donutwrap">
             <div class="donut"><svg viewBox="0 0 120 120" id="donut" aria-hidden="true"></svg><div class="mid"><b class="mono" data-cost="total">₩0</b><span>TOTAL</span></div></div>
             <ul class="clist" id="clist-cart"></ul>
@@ -1264,7 +1351,7 @@
         </div>
       </section>
 
-      <section class="card"><div class="card-b">
+      <section class="card" hidden><div class="card-b">
         <button class="act" type="button" data-act="save" style="--hue:var(--c-move); --hue-s:var(--c-move-s)">
           <span class="ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17.4 9.2 3.9 3.9 0 0 1 17 18H7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 15.5V9.8m0 0-2.2 2.2M12 9.8l2.2 2.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
           <span class="tx">클라우드 저장<small>어느 기기에서나 이어서 편집</small></span>
@@ -1281,12 +1368,11 @@
           <span class="ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 10 17l9-9.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="tx">예약 확정 · 결제<small>카카오페이 · 신용카드</small></span>
         </button>
-        <span class="note" id="cart-note" hidden></span>
       </div></section>
     </aside>
 
     <div>
-      <div class="sec" style="margin-top:0"><span class="n">04</span><h2>여행 일정 요약</h2><p>예약 상태 포함</p>
+      <div class="sec" style="margin-top:0"><h2>일정표</h2><p>시간을 누르면 고치고, ⋮⋮ 를 끌면 순서를 바꿔요</p>
         <button type="button" class="btn sharebtn" id="trip-share"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><circle cx="18" cy="5" r="2.6" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="19" r="2.6" stroke="currentColor" stroke-width="1.8"/><path d="m8.3 10.8 7.4-4.3M8.3 13.2l7.4 4.3" stroke="currentColor" stroke-width="1.8"/></svg>공유하기</button></div>
       <div class="sharebox" id="share-box" hidden></div>
       <div class="tripbar">
@@ -1321,12 +1407,13 @@
       </div>
       <div class="days" id="days-cart"></div>
 
-      <div class="sec" style="margin-top:26px"><span class="n">05</span><h2>예약</h2><p id="bk-count">0건 미예약</p></div>
-      <div class="bksum">
-        <span>예약은 각 예약처(코레일 · 항공사 · 숙소 · 식당)로 연결됩니다. 여기서 확정한 건만 결제 대상입니다.</span>
-        <button class="btn brand go" type="button" id="bk-all">미예약 건 한 번에 요청</button>
-      </div>
-      <div id="booking-list"></div>
+      <details class="bkfold">
+        <summary><b>예약 체크리스트</b><span id="bk-count">0건 미예약</span></summary>
+        <div class="bksum" hidden>
+          <button class="btn brand go" type="button" id="bk-all">미예약 건 한 번에 요청</button>
+        </div>
+        <div id="booking-list"></div>
+      </details>
     </div>
   </div>
 </main>
@@ -1365,9 +1452,8 @@
 
 <!-- ══════ 예약 ══════ -->
 <main id="view-explore" class="wrap" hidden>
-  <p class="crumb">둘러보기 / <b>다른 사람 일정</b></p>
-  <div class="phead"><h1>다른 사람들은 이렇게 다녀왔어요</h1></div>
-  <p class="metaline"><span>공유된 일정 <b id="ex-count">0개</b></span><span>가져오면 내 날짜·인원에 맞춰 다시 계산됩니다</span></p>
+  <div class="phead"><h1>추천 코스</h1></div>
+  <p class="metaline"><span>코스 <b id="ex-count">0개</b></span><span>가져오면 내 날짜·인원에 맞춰 다시 짜요</span></p>
   <div class="exfilter" id="ex-filter"></div>
   <div class="exgrid" id="ex-list"></div>
 </main>
@@ -1382,9 +1468,7 @@
 
 <footer>
   <div class="foot-in">
-    <a class="applink" href="#" onclick="return false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M11 18.5h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Home / APP 연동</a>
-    <span>지도 경계는 Natural Earth 1:50m 공개 데이터, 좌표는 실제 위경도를 사용합니다. 요금은 예상치입니다.</span>
-    <span class="ver">App version 1.0 | © 2026 여행노트</span>
+    <span>요금·이동 시간은 예상치예요. 장소 정보는 네이버 지역 검색, 대중교통은 ODsay, 지도 경계는 Natural Earth를 써요.</span>
   </div>
 </footer>
 
@@ -1438,22 +1522,30 @@
 
 <dialog id="bkdlg">
   <div class="dlg">
-    <h3>예약 진행</h3>
-    <p><span id="bk-kind">이동</span> · 예약처 연결</p>
-    <div class="bk-field"><span>상품</span><b id="bk-name">–</b></div>
-    <div class="bk-field"><span>일시</span><span id="bk-when">–</span></div>
-    <div class="bk-field"><span>인원</span><span id="bk-people">2명</span></div>
+    <h3>예약 기록</h3>
+    <p><span id="bk-kind">이동</span> · <b id="bk-name">–</b><br><small id="bk-when">–</small></p>
+    <div class="bk-field"><span>예상 금액</span><b id="bk-total">₩0</b><small id="bk-people" hidden>2명</small></div>
+    <div class="bk-field"><span>예약</span>
+      <span class="bk-seg" role="group" aria-label="예약 여부">
+        <button type="button" data-bk="need">아직 안 함</button><button type="button" data-bk="done">예약함</button>
+      </span>
+    </div>
+    <div class="bk-field" id="bk-reffield"><span>예약번호</span><input id="bk-refin" type="text" placeholder="예) 코레일 1234-5678" autocomplete="off"></div>
     <div class="bk-field"><span>옵션</span><select id="bk-option" aria-label="예약 옵션"></select></div>
-    <div class="bk-field"><span>결제 예정</span><b id="bk-total">₩0</b></div>
-    <p class="bk-host" id="bk-ref" hidden>예약번호</p>
-    <p class="bk-host">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 4h6v6M20 4 11 13M18 14v5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 19V8a1.5 1.5 0 0 1 1.5-1.5H10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      확정하면 예약처 결제창으로 이동합니다 (데모에서는 예약번호만 발급됩니다)
-    </p>
+    <div class="bk-sub">변경 · 취소</div>
+    <div class="bk-field"><span>요청</span>
+      <select id="bk-chg" aria-label="변경·취소 요청">
+        <option value="">없음</option><option value="change">변경 요청</option><option value="cancel">취소 요청</option>
+      </select>
+    </div>
+    <div class="bk-field bk-money"><span>수수료</span><span class="won">₩<input id="bk-fee" type="number" min="0" step="100" inputmode="numeric" placeholder="0"></span></div>
+    <div class="bk-field bk-money"><span>환불 예정액</span><span class="won">₩<input id="bk-refund" type="number" min="0" step="100" inputmode="numeric" placeholder="0"></span></div>
+    <p class="bk-host" id="bk-ref" hidden></p>
+    <p class="bk-host">취소를 요청하면 예상 비용에서 원래 금액을 빼고 수수료만 넣어요.</p>
     <div class="dlg-actions">
       <button type="button" id="bk-close">닫기</button>
-      <button type="button" id="bk-cancel-res" hidden>예약 취소</button>
-      <button type="button" class="go" id="bk-go">예약처로 이동 · 확정</button>
+      <button type="button" id="bk-cancel-res" hidden>예약 지우기</button>
+      <button type="button" class="go" id="bk-go">저장</button>
     </div>
   </div>
 </dialog>
@@ -2363,6 +2455,7 @@ Object.keys(FILTERS).forEach(function(k){ if(!state.filters[k]) state.filters[k]
    (안 그러면 새 기기에서 연 기본 일정이 클라우드의 실제 일정보다 최신으로 보인다) */
 var BOOTING = true;
 function save(){
+  if(window.travelSync && window.travelSync.frozen) return;   /* 다른 기기 것을 받아 다시 여는 중 */
   if(!BOOTING) state.savedAt = Date.now();
   try{ localStorage.setItem('yeohaengnote-v3', JSON.stringify(state)); }catch(e){}
   if(!BOOTING && window.travelSync) window.travelSync.push(state);   /* 로그인돼 있으면 Firebase 에도 (../js/travel-sync.js) */
@@ -3404,8 +3497,10 @@ function finalize(trip){
       it.t = hhmm(it.tm);
       itemCount++;
       if(it.cat && unit[it.cat]!==undefined){
-        unit[it.cat] += it.price||0;
-        grp[it.cat]  += (it.groupPrice!=null) ? it.groupPrice : (it.price||0)*HEADS;
+        /* 취소 요청한 예약은 원래 값 대신 수수료만, 변경 요청은 원래 값에 수수료를 더한다 (#10) */
+        var fee = +it.fee || 0, gone = it.chg === 'cancel';
+        unit[it.cat] += (gone ? 0 : (it.price||0)) + fee/HEADS;
+        grp[it.cat]  += (gone ? 0 : ((it.groupPrice!=null) ? it.groupPrice : (it.price||0)*HEADS)) + fee;
       }
       if(it.book){ if(it.status==='done') done++; else need++; }
       if(it.lat==null) return;
@@ -4674,7 +4769,8 @@ function hopBar(hp){
     return '<span class="hi">'+ico(hp.mode)+'</span>'+
       '<span class="ht"><b>'+hp.from+'</b>에서 <b>'+hp.to+'</b>까지 · '+kmLabel(hp.km)+(hp.road?'':' (직선 어림)')+
       (extra||'')+'</span>'+
-      (hp.tight ? '<span class="hw" title="앞 일정과의 간격보다 이동 시간이 깁니다">간격 '+hp.gap+'분</span>' : '');
+      (hp.tight ? '<span class="hw" title="앞 일정과의 간격보다 이동 시간이 깁니다">간격 '+hp.gap+'분</span>' : '')+
+      (hp.mode==='bus' ? '<button type="button" class="hoptog" aria-label="경로 자세히">경로</button>' : '');
   }
   function withLinks(inner){
     return '<div class="hoptop">'+head(inner)+'</div>'+
@@ -4705,8 +4801,10 @@ function hopBar(hp){
     var links = bar.querySelector('.hoplinks');
     links.insertBefore(b, links.firstChild);
   }
+  /* 버스 번호·지도 링크는 [경로]를 눌러야 펼쳐진다 (평소엔 한 줄) */
   bar.addEventListener('click', function(e){
     if(e.target.closest('.hopmap')) openHopMap(hp);
+    if(e.target.closest('.hoptog')) bar.classList.toggle('open');
   });
   function paint(res){
     /* 캐시에 있으면 이 콜백이 바로 돌아온다. 아직 화면에 붙기 전이어도 그려 둔다 */
@@ -4932,9 +5030,9 @@ function buildDays(container){
       /* 예약 상태 */
       if(it.book){
         var row=el('div','irow');
-        row.appendChild(el('span','badge '+(it.status==='done'?'ok':'wait'),
-          it.status==='done' ? ('예약 완료 · '+it.ref) : (it.book+' 미예약')));
-        var bk=el('button','mini', it.status==='done' ? '예약 보기' : '예약하기');
+        row.appendChild(el('span','badge '+bkClass(it),
+          (it.chg ? bkLabel(it) + chgText(it) : it.status==='done' ? ('예약함' + (it.ref ? ' · '+it.ref : '')) : (it.book+' 예약 전'))));
+        var bk=el('button','mini', '예약 기록');
         bk.type='button';
         bk.addEventListener('click', function(){ openBooking(it.id); });
         row.appendChild(bk);
@@ -5498,6 +5596,12 @@ var OPTIONS = {
   '입장권':['오전 입장','오후 입장'],
   '렌터카':['경차 · 완전자차','준중형 · 완전자차','SUV · 완전자차']
 };
+var bkState = 'need';
+function setBkSeg(v){
+  bkState = v;
+  Array.prototype.forEach.call(document.querySelectorAll('#bkdlg [data-bk]'), function(b){ b.setAttribute('aria-pressed', b.dataset.bk===v ? 'true' : 'false'); });
+  document.getElementById('bk-reffield').hidden = v !== 'done';
+}
 function openBooking(id){
   var f=findItem(id); if(!f) return;
   bookingTarget=id;
@@ -5506,34 +5610,55 @@ function openBooking(id){
   document.getElementById('bk-name').textContent=it.n;
   document.getElementById('bk-when').textContent=f.day.date+' '+it.t+' · '+f.day.no+'일차';
   document.getElementById('bk-people').textContent=state.people+'명';
-  document.getElementById('bk-total').textContent=won((it.price||0)*state.people);
+  document.getElementById('bk-total').textContent=won((it.price||0)*state.people)+' ('+state.people+'명)';
   var sel=document.getElementById('bk-option');
   sel.textContent='';
   (OPTIONS[it.book]||['기본']).forEach(function(o){
     var op=document.createElement('option'); op.textContent=o; sel.appendChild(op);
   });
-  var done = it.status==='done';
-  document.getElementById('bk-go').hidden = done;
-  document.getElementById('bk-cancel-res').hidden = !done;
-  document.getElementById('bk-ref').hidden = !done;
-  if(done) document.getElementById('bk-ref').textContent='예약번호 '+it.ref;
+  if(it.opt) sel.value = it.opt;
+  setBkSeg(it.status==='done' ? 'done' : 'need');
+  document.getElementById('bk-refin').value = it.ref || '';
+  document.getElementById('bk-chg').value = it.chg || '';
+  document.getElementById('bk-fee').value = it.fee || '';
+  document.getElementById('bk-refund').value = it.refund || '';
+  document.getElementById('bk-cancel-res').hidden = true;
+  document.getElementById('bk-ref').hidden = true;
   document.getElementById('bkdlg').showModal();
 }
 function confirmBooking(){
   var f=findItem(bookingTarget); if(!f) return;
-  f.it.status='done';
-  f.it.ref='RV'+String(Math.floor(Math.random()*90000)+10000);
-  f.it.s = f.it.s.replace(/ · 예약처.*/,'') + ' · ' + document.getElementById('bk-option').value;
+  var it=f.it;
+  it.status = bkState;
+  it.ref = bkState==='done' ? (document.getElementById('bk-refin').value.trim() || null) : null;
+  it.opt = document.getElementById('bk-option').value;
+  it.chg = document.getElementById('bk-chg').value || '';
+  it.fee = Math.max(0, +document.getElementById('bk-fee').value || 0);
+  it.refund = Math.max(0, +document.getElementById('bk-refund').value || 0);
+  if(!it.chg){ it.fee = 0; it.refund = 0; }
   document.getElementById('bkdlg').close();
   refresh();
-  note('cart', f.it.n+' 예약이 확정되었습니다 · '+f.it.ref);
+  note('cart', it.n+' 예약 기록을 저장했어요');
 }
 function cancelBooking(){
   var f=findItem(bookingTarget); if(!f) return;
   f.it.status='need'; f.it.ref=null;
   document.getElementById('bkdlg').close();
   refresh();
-  note('cart', f.it.n+' 예약을 취소했습니다');
+}
+Array.prototype.forEach.call(document.querySelectorAll('#bkdlg [data-bk]'), function(b){
+  b.addEventListener('click', function(){ setBkSeg(b.dataset.bk); });
+});
+/* 예약 표시 문구 (#10 변경·취소 포함) */
+function bkLabel(it){
+  if(it.chg==='cancel') return '취소 요청';
+  if(it.chg==='change') return '변경 요청';
+  return it.status==='done' ? '예약함' : '미예약';
+}
+function bkClass(it){ return it.chg ? 'chg' : (it.status==='done' ? 'ok' : 'wait'); }
+function chgText(it){
+  if(!it.chg) return '';
+  return ' · 수수료 '+won(it.fee||0)+(it.refund ? ' · 환불 예정 '+won(it.refund) : '');
 }
 function renderBooking(){
   var box=document.getElementById('booking-list');
@@ -5554,10 +5679,10 @@ function renderBooking(){
       r.style.setProperty('--hue-s','var('+hue+'-s)');
       r.innerHTML =
         '<span class="ic">'+glyph(it.ico)+'</span>'+
-        '<span class="w"><b><span class="tg" data-tag="'+it.tag+'">'+it.tag+'</span>'+it.n+'</b><small>'+it.t+' · '+it.book+' · '+it.s+'</small></span>'+
+        '<span class="w"><b><span class="tg" data-tag="'+it.tag+'">'+it.tag+'</span>'+escHtml(it.n)+'</b><small>'+it.t+' · '+it.book+(it.ref ? ' · 예약번호 '+escHtml(it.ref) : '')+chgText(it)+'</small></span>'+
         '<span class="amt mono">'+won((it.price||0)*state.people)+'</span>'+
-        '<span class="badge '+(it.status==='done'?'ok':'wait')+'">'+(it.status==='done'?'예약 완료':'미예약')+'</span>';
-      var b=el('button','btn'+(it.status==='done'?'':' brand'), it.status==='done' ? '예약 확인' : '예약처로 이동');
+        '<span class="badge '+bkClass(it)+'">'+bkLabel(it)+'</span>';
+      var b=el('button','btn', '기록');
       b.type='button';
       b.addEventListener('click', function(){ openBooking(it.id); });
       r.appendChild(b);
@@ -5757,9 +5882,8 @@ function renderKeyBox(){
   var k=transitKey();
   box.textContent='';
   if(k){
-    box.innerHTML = '<span class="ok">실제 노선 켜짐</span>'+
-      '<span>버스 구간의 [버스 번호 불러오기]를 누르면 몇 번 버스를 어디서 타고 내리는지 보여 줍니다 · '+
-      '오늘 <b>'+transitUsed()+' / '+ODSAY_DAILY+'회</b> 사용 · 한 번 받은 구간은 다시 세지 않습니다</span>';
+    box.innerHTML = '<span class="ok">버스 노선 조회</span>'+
+      '<span>구간의 [경로]에서 버스 번호를 불러와요 · 오늘 <b>'+transitUsed()+' / '+ODSAY_DAILY+'회</b></span>';
     var off=el('button',null,'끄기'); off.type='button';
     off.addEventListener('click', function(){ setTransitKey(''); });
     box.appendChild(off);
@@ -5893,7 +6017,7 @@ document.getElementById('bk-all').addEventListener('click', function(){
   if(!TRIP) return;
   var n=0;
   TRIP.days.forEach(function(d){ d.items.forEach(function(it){
-    if(it.book && it.status!=='done'){ it.status='done'; it.ref='RV'+String(Math.floor(Math.random()*90000)+10000); n++; }
+    if(it.book && it.status!=='done'){ it.status='done'; n++; }
   }); });
   refresh();
   note('cart', n+'건 예약을 요청했습니다');
