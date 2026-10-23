@@ -7,6 +7,10 @@
 //   GET /naver/local?q=춘천역 맛집   네이버 지역 검색 → {items:[{name, category, address, road, lat, lng, link}]}
 //   GET /odsay/path?sx=&sy=&ex=&ey=  ODsay 대중교통 길찾기 (응답 그대로). 키(ODSAY_KEY)는 사이트 주소로 잠긴
 //                                    웹 키라 사이트 주소를 Referer 로 붙여 부른다 (GitHub 에서 확인)
+//   GET /naver/image?q=춘천 호수별닭갈비  네이버 이미지 검색 → {items:[{thumb, src, w, h}]}
+//   GET /tour/info?name=&lat=&lng=   한국관광공사 관광정보(공공데이터포털 DATA_GO_KR_KEY) — 이름·위치로 찾아
+//                                    {found, title, overview, tel, homepage, info:[[항목, 값]], images:[]}
+// 장소 정보는 잘 안 바뀌므로 Cloudflare 캐시에 하루 둔다 (같은 장소는 네이버·관광공사에 다시 묻지 않음)
 
 const json = (body, status, cors) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", ...cors } });
@@ -78,6 +82,85 @@ async function naverLocal(q, env) {
   return { status: 200, body: { items } };
 }
 
+async function naverImage(url, env) {
+  if (!env.NAVER_ID || !env.NAVER_SECRET) return { status: 503, body: { error: "no_key" } };
+  const q = (url.searchParams.get("q") || "").trim().slice(0, 100);
+  if (!q) return { status: 400, body: { error: "query" } };
+  const u = new URL("https://naverapihub.apigw.ntruss.com/search/v1/image");
+  u.searchParams.set("query", q);
+  u.searchParams.set("display", "12");
+  u.searchParams.set("sort", "sim");
+  const r = await fetch(u, { headers: { "X-NCP-APIGW-API-KEY-ID": env.NAVER_ID, "X-NCP-APIGW-API-KEY": env.NAVER_SECRET } });
+  if (!r.ok) return { status: 502, body: { error: "naver", status: r.status } };
+  const d = await r.json();
+  const items = (d.items || [])
+    .map((it) => ({ thumb: it.thumbnail, src: it.link, w: +it.sizewidth || 0, h: +it.sizeheight || 0 }))
+    .filter((x) => x.thumb && (!x.w || x.w >= 300));   // 아이콘·작은 그림 빼기
+  return { status: 200, body: { items: items.slice(0, 10) } };
+}
+
+/* 한국관광공사 국문 관광정보(KorService2). 이름으로 찾고, 그중 좌표가 1.5km 안인 곳을 고른다 */
+const TOUR = "https://apis.data.go.kr/B551011/KorService2/";
+const INTRO = {   // 분류별 상세 항목 이름
+  "12": [["usetime", "이용 시간"], ["restdate", "쉬는 날"], ["parking", "주차"], ["infocenter", "문의"], ["expguide", "체험"]],
+  "14": [["usetimeculture", "이용 시간"], ["restdateculture", "쉬는 날"], ["usefee", "요금"], ["parkingculture", "주차"], ["infocenterculture", "문의"]],
+  "15": [["eventstartdate", "시작"], ["eventenddate", "끝"], ["playtime", "시간"], ["usetimefestival", "요금"], ["eventplace", "장소"]],
+  "28": [["usetimeleports", "이용 시간"], ["restdateleports", "쉬는 날"], ["usefeeleports", "요금"], ["parkingleports", "주차"]],
+  "32": [["checkintime", "체크인"], ["checkouttime", "체크아웃"], ["roomtype", "객실"], ["parkinglodging", "주차"], ["reservationlodging", "예약"]],
+  "38": [["opentime", "영업 시간"], ["restdateshopping", "쉬는 날"], ["parkingshopping", "주차"]],
+  "39": [["firstmenu", "대표 메뉴"], ["treatmenu", "메뉴"], ["opentimefood", "영업 시간"], ["restdatefood", "쉬는 날"], ["parkingfood", "주차"], ["infocenterfood", "문의"]],
+};
+const strip2 = (s) => String(s || "").replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").trim();
+async function tourGet(op, params, env) {
+  const u = new URL(TOUR + op);
+  u.searchParams.set("serviceKey", env.DATA_GO_KR_KEY);
+  u.searchParams.set("MobileOS", "ETC");
+  u.searchParams.set("MobileApp", "solworks");
+  u.searchParams.set("_type", "json");
+  for (const k in params) u.searchParams.set(k, params[k]);
+  const r = await fetch(u);
+  const t = await r.text();
+  let j = null;
+  try { j = JSON.parse(t); } catch { /* XML 오류 응답 */ }
+  if (!r.ok || !j || !j.response) return { error: (j && j.OpenAPI_ServiceResponse && j.OpenAPI_ServiceResponse.cmmMsgHeader && j.OpenAPI_ServiceResponse.cmmMsgHeader.errMsg) || ("http " + r.status) };
+  const items = j.response.body && j.response.body.items && j.response.body.items.item;
+  return { items: Array.isArray(items) ? items : items ? [items] : [] };
+}
+function km(a, b) {
+  const R = 6371, d1 = (b.lat - a.lat) * Math.PI / 180, d2 = (b.lng - a.lng) * Math.PI / 180;
+  const h = Math.sin(d1 / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(d2 / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+async function tourInfo(url, env) {
+  if (!env.DATA_GO_KR_KEY) return { status: 503, body: { error: "no_key" } };
+  const name = (url.searchParams.get("name") || "").trim().slice(0, 60);
+  const at = { lat: +url.searchParams.get("lat"), lng: +url.searchParams.get("lng") };
+  if (!name) return { status: 400, body: { error: "query" } };
+  const s = await tourGet("searchKeyword2", { keyword: name, numOfRows: "20", arrange: "A" }, env);
+  if (s.error) return { status: 502, body: { error: "tour", detail: s.error } };
+  const near = s.items
+    .map((x) => ({ x, d: (at.lat && x.mapy) ? km(at, { lat: +x.mapy, lng: +x.mapx }) : 99 }))
+    .filter((o) => o.d <= 1.5)
+    .sort((a, b) => a.d - b.d)[0];
+  if (!near) return { status: 200, body: { found: false } };
+  const it = near.x, id = it.contentid, type = String(it.contenttypeid || "");
+  const [com, intro, img] = await Promise.all([
+    tourGet("detailCommon2", { contentId: id }, env),
+    INTRO[type] ? tourGet("detailIntro2", { contentId: id, contentTypeId: type }, env) : Promise.resolve({ items: [] }),
+    tourGet("detailImage2", { contentId: id, imageYN: "Y" }, env),
+  ]);
+  const c = (com.items && com.items[0]) || {};
+  const ii = (intro.items && intro.items[0]) || {};
+  const info = (INTRO[type] || []).map(([k, label]) => [label, strip2(ii[k])]).filter((p) => p[1]);
+  const images = [it.firstimage, ...((img.items || []).map((m) => m.originimgurl))].filter(Boolean)
+    .map((u) => u.replace(/^http:/, "https:"));
+  return { status: 200, body: {
+    found: true, title: it.title, type, tel: strip2(c.tel || it.tel), homepage: strip2(c.homepage),
+    overview: strip2(c.overview).slice(0, 600), addr: [it.addr1, it.addr2].filter(Boolean).join(" "),
+    info, images: [...new Set(images)].slice(0, 8),
+  } };
+}
+
 export default {
   async fetch(req, env) {
     const cors = corsFor(req, env);
@@ -86,7 +169,7 @@ export default {
     if (req.method !== "GET") return json({ error: "method" }, 405, cors);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, naver: Boolean(env.NAVER_ID && env.NAVER_SECRET), odsay: Boolean(env.ODSAY_KEY), github: Boolean(env.GH_TOKEN) }, 200, cors);
+      return json({ ok: true, naver: Boolean(env.NAVER_ID && env.NAVER_SECRET), odsay: Boolean(env.ODSAY_KEY), tour: Boolean(env.DATA_GO_KR_KEY), github: Boolean(env.GH_TOKEN) }, 200, cors);
     }
 
     if (url.pathname === "/naver/local") {
@@ -96,6 +179,19 @@ export default {
       if (!q) return json({ error: "query" }, 400, cors);
       const out = await naverLocal(q, env);
       return json(out.body, out.status, cors);
+    }
+
+    if (url.pathname === "/naver/image" || url.pathname === "/tour/info") {
+      if (!(await userOf(req, env))) return json({ error: "login" }, 401, cors);
+      const cache = caches.default;
+      const key = new Request(url.origin + url.pathname + url.search);
+      let hit = await cache.match(key);
+      if (!hit) {
+        const out = url.pathname === "/naver/image" ? await naverImage(url, env) : await tourInfo(url, env);
+        hit = new Response(JSON.stringify(out.body), { status: out.status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=86400" } });
+        if (out.status === 200) await cache.put(key, hit.clone());
+      }
+      return new Response(hit.body, { status: hit.status, headers: { "content-type": "application/json; charset=utf-8", ...cors } });
     }
 
     if (url.pathname === "/odsay/path") {

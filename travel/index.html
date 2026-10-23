@@ -1163,6 +1163,44 @@
     .fb-panel{bottom:calc(184px + env(safe-area-inset-bottom,0px)) !important}
     .genwrap .gstate{font-size:11.5px}
   }
+
+  /* ═══ 장소 정보 창 ═══ */
+  .pinfo{display:inline-block; font-size:11px; font-weight:700; color:var(--c-move); border:1px solid var(--line-2); border-radius:6px; padding:2px 7px; background:#fff; white-space:nowrap}
+  .pinfo:hover{border-color:var(--c-move); background:var(--c-move-s)}
+  .placecard .pright{display:flex; flex-direction:column; align-items:flex-end; gap:6px}
+  .opbtn.info{color:var(--c-move); font-weight:600}
+  .psheet{border:0; padding:0; background:#fff; color:var(--ink); width:min(460px,100vw); max-width:none; height:100%; max-height:none;
+          margin:0 0 0 auto; border-radius:0; box-shadow:-12px 0 40px rgba(20,28,24,.25); display:none; flex-direction:column}
+  .psheet[open]{display:flex}
+  .psheet::backdrop{background:rgba(20,28,24,.35)}
+  .ps-grab{display:none}
+  .ps-top{display:flex; align-items:center; gap:10px; padding:16px 18px 10px; border-bottom:1px solid var(--line)}
+  .ps-top h3{flex:1; font-size:18px; letter-spacing:-.02em; min-width:0}
+  .ps-x{width:34px; height:34px; border-radius:9px; background:var(--card-2); font-size:15px; color:var(--ink-2)}
+  .ps-body{overflow-y:auto; padding:14px 18px calc(18px + env(safe-area-inset-bottom,0px)); display:grid; gap:12px; align-content:start}
+  .ps-photos{display:flex; gap:8px; overflow-x:auto; scroll-snap-type:x mandatory; margin:0 -18px; padding:0 18px 4px; scrollbar-width:thin}
+  .ps-ph{flex:0 0 auto; width:62%; max-width:280px; aspect-ratio:4/3; border-radius:12px; overflow:hidden; background:var(--card-3); scroll-snap-align:start}
+  .ps-ph img{width:100%; height:100%; object-fit:cover; display:block}
+  .ps-ph.ph-load{animation:phl 1.2s ease-in-out infinite alternate}
+  @keyframes phl{from{opacity:.5} to{opacity:1}}
+  .ps-sub{font-size:13px; color:var(--ink-2)}
+  .ps-tags{display:flex; gap:5px; flex-wrap:wrap}
+  .ps-tags span{font-size:11px; background:var(--card-3); color:var(--ink-3); border-radius:5px; padding:1px 7px}
+  .ps-dl{display:grid; grid-template-columns:auto minmax(0,1fr); gap:7px 14px; font-size:13px; margin:0; padding:12px 14px; border:1px solid var(--line); border-radius:12px}
+  .ps-dl dt{color:var(--ink-3); white-space:nowrap}
+  .ps-dl dd{margin:0; color:var(--ink); overflow-wrap:anywhere}
+  .ps-over{font-size:13px; line-height:1.65; color:var(--ink-2)}
+  .ps-note{font-size:12.5px; color:var(--ink-3)}
+  .ps-src{font-size:11px; color:var(--ink-4)}
+  .ps-actions{display:flex; gap:8px; flex-wrap:wrap; position:sticky; bottom:0; background:#fff; padding-top:6px}
+  .ps-btn{flex:1 1 auto; text-align:center; text-decoration:none; font-size:14px; font-weight:600; padding:11px 14px; border-radius:10px; border:1px solid var(--line-2); color:var(--ink); background:#fff}
+  .ps-btn.main{background:var(--brand); border-color:var(--brand); color:#fff}
+  @media (max-width:640px){
+    .psheet{width:100vw; height:auto; max-height:88vh; margin:auto 0 0; border-radius:18px 18px 0 0; box-shadow:0 -10px 40px rgba(20,28,24,.3)}
+    .ps-grab{display:block; width:40px; height:4px; border-radius:2px; background:var(--line-3); margin:8px auto 0}
+    .ps-top{padding-top:8px}
+    .ps-ph{width:78%}
+  }
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important; scroll-behavior:auto !important}}
 </style>
 
@@ -1589,6 +1627,12 @@
       <button type="button" class="go" id="pay-go">카카오페이로 결제</button>
     </div>
   </div>
+</dialog>
+
+<dialog id="placedlg" class="psheet" aria-labelledby="ps-title">
+  <div class="ps-grab" aria-hidden="true"></div>
+  <div class="ps-top"><h3 id="ps-title">장소</h3><button type="button" class="ps-x" id="ps-close" aria-label="닫기">✕</button></div>
+  <div class="ps-body" id="ps-body"></div>
 </dialog>
 
 <dialog id="realmap" class="rmdlg" aria-labelledby="rm-title">
@@ -4180,14 +4224,19 @@ function renderPlaces(panel, key){
     }
     card.innerHTML =
       '<span class="pnum">'+(i+1)+'</span>'+
-      '<span class="pbody"><b>'+x.n+'</b><small>'+(x.s||'')+'</small>'+
+      '<span class="pbody"><b>'+escHtml(x.n)+'</b><small>'+escHtml(x.s||'')+'</small>'+
       '<span class="ptags">'+(x.tags||[]).map(function(t){ return '<span>#'+t+'</span>'; }).join('')+
       (extra?'<span class="pdur">'+extra+'</span>':'')+'</span></span>'+
       '<span class="pright"><span class="pprice">'+price+'</span>'+
+      '<span class="pinfo" role="button" tabindex="0" aria-label="'+escHtml(x.n)+' 사진·정보">사진·정보</span>'+
       '<span class="pcheck" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none"><path d="M5 12.5 10 17l9-9.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>';
     card.addEventListener('mouseenter', function(){ active=i; placeActive[key]=i; paint(); });
     card.addEventListener('focus', function(){ active=i; placeActive[key]=i; paint(); });
-    card.addEventListener('click', function(){
+    card.addEventListener('click', function(e){
+      if(e.target.closest('.pinfo')){
+        openPlaceInfo(x, {kind: kind, city: cityName, picked: isPicked(cityName, kind, x.n), onPick: function(){ card.click(); }});
+        return;
+      }
       var nowOn = togglePick(cityName, kind, x.n);
       card.classList.toggle('picked', nowOn);
       card.setAttribute('aria-pressed', nowOn?'true':'false');
@@ -5086,6 +5135,14 @@ function buildDays(container){
       var memoText = itemMemo(day.no, it);
       var mb=el('button','opbtn memo' + (memoText ? ' has' : ''), '메모');
       mb.type='button'; mb.title='이 일정에 메모'; mb.setAttribute('aria-label', it.n+' 메모');
+      if(it.lat!=null && (it.cat==='spot' || it.cat==='food' || it.cat==='stay')){
+        var ib=el('button','opbtn info','정보');
+        ib.type='button'; ib.title='사진·정보'; ib.setAttribute('aria-label', it.n+' 사진·정보');
+        ib.addEventListener('click', function(){
+          openPlaceInfo({n: it.n.replace(/ (체크인|복귀)$/,''), lat: it.lat, lng: it.lng, s: it.s, url: it.url}, {city: TRIP && TRIP.cityName});
+        });
+        hd.appendChild(ib);
+      }
       hd.appendChild(mb);
       hd.appendChild(grip); hd.appendChild(rm);
       li.appendChild(hd);
@@ -6046,6 +6103,77 @@ function ensureCartNightOption(nights){
   });
 })();
 
+
+/* ═══ 장소 정보 창 ═══
+   장소를 누르면 사진(네이버 이미지 검색)과 공식 정보(한국관광공사: 영업시간·쉬는 날·소개·전화)를 보여 준다.
+   둘 다 중계 서버(worker/)를 거치고, 서버가 하루 동안 기억해 둔다. 휴대폰에서는 아래에서 올라오는 창. */
+var INFO_MEMO = {};
+function relayGet(path, params){
+  var qs = Object.keys(params).map(function(k){ return k+'='+encodeURIComponent(params[k]); }).join('&');
+  var key = path+'?'+qs;
+  if(INFO_MEMO[key]) return INFO_MEMO[key];
+  INFO_MEMO[key] = idToken().then(function(t){
+    if(!t) throw new Error('login');
+    return fetch(RELAY + path + '?' + qs, {headers: {Authorization: 'Bearer ' + t}});
+  }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ delete INFO_MEMO[key]; return null; });
+  return INFO_MEMO[key];
+}
+function naverMapUrl(x){
+  return x.url && /map\.naver/.test(x.url) ? x.url
+       : 'https://map.naver.com/p/search/' + encodeURIComponent(x.n + (x.s ? ' ' + String(x.s).split(' · ').slice(-1)[0].split(' ').slice(0,2).join(' ') : ''));
+}
+function openPlaceInfo(x, opt){
+  opt = opt || {};
+  var dlg = document.getElementById('placedlg'), body = document.getElementById('ps-body');
+  document.getElementById('ps-title').textContent = x.n;
+  var tags = (x.tags||[]).map(function(t){ return '<span>#'+escHtml(t)+'</span>'; }).join('');
+  body.innerHTML =
+    '<div class="ps-photos" id="ps-photos"><div class="ps-ph ph-load"></div><div class="ps-ph ph-load"></div><div class="ps-ph ph-load"></div></div>'+
+    '<p class="ps-sub">'+escHtml(x.s||'')+'</p>'+
+    (tags ? '<p class="ps-tags">'+tags+'</p>' : '')+
+    '<div id="ps-official"><p class="ps-note">공식 정보를 찾는 중…</p></div>'+
+    '<div class="ps-actions">'+
+      '<a class="ps-btn" href="'+escHtml(naverMapUrl(x))+'" target="_blank" rel="noopener">네이버지도에서 보기</a>'+
+      (opt.onPick ? '<button type="button" class="ps-btn main" id="ps-pick">'+(opt.picked ? '표시 해제' : '가고 싶은 곳으로 표시')+'</button>' : '')+
+    '</div>';
+  if(opt.onPick) document.getElementById('ps-pick').addEventListener('click', function(){ opt.onPick(); dlg.close(); });
+  if(!dlg.open) dlg.showModal();
+
+  var q = (opt.city && x.n.indexOf(opt.city) < 0 ? opt.city + ' ' : '') + x.n;
+  relayGet('/naver/image', {q: q}).then(function(d){
+    var box = document.getElementById('ps-photos'); if(!box || document.getElementById('ps-title').textContent !== x.n) return;
+    var items = (d && d.items) || [];
+    if(!items.length){ box.innerHTML = '<p class="ps-note">사진을 찾지 못했어요</p>'; return; }
+    box.innerHTML = items.map(function(m){
+      return '<a class="ps-ph" href="'+escHtml(m.src)+'" target="_blank" rel="noopener"><img src="'+escHtml(m.thumb)+'" alt="" loading="lazy" referrerpolicy="no-referrer"></a>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('img'), function(im){
+      im.addEventListener('error', function(){ im.parentNode.remove(); });
+    });
+  });
+  relayGet('/tour/info', {name: x.n, lat: x.lat, lng: x.lng}).then(function(d){
+    var box = document.getElementById('ps-official'); if(!box || document.getElementById('ps-title').textContent !== x.n) return;
+    if(!d){ box.innerHTML = '<p class="ps-note">공식 정보를 불러오지 못했어요. 영업시간·메뉴는 네이버지도에서 확인하세요.</p>'; return; }
+    if(!d.found){ box.innerHTML = '<p class="ps-note">한국관광공사에 등록된 정보가 없어요. 영업시간·메뉴는 네이버지도에서 확인하세요.</p>'; return; }
+    var rows = [];
+    if(d.addr) rows.push(['주소', d.addr]);
+    if(d.tel) rows.push(['전화', d.tel]);
+    (d.info||[]).forEach(function(p){ rows.push(p); });
+    box.innerHTML =
+      '<dl class="ps-dl">'+rows.map(function(r){ return '<dt>'+escHtml(r[0])+'</dt><dd>'+escHtml(r[1]).replace(/\n/g,'<br>')+'</dd>'; }).join('')+'</dl>'+
+      (d.overview ? '<p class="ps-over">'+escHtml(d.overview)+'</p>' : '')+
+      '<p class="ps-src">정보 출처: 한국관광공사</p>';
+    /* 관광공사 사진이 있으면 앞에 붙인다 */
+    var ph = document.getElementById('ps-photos');
+    if(ph && d.images && d.images.length){
+      var html = d.images.map(function(u){ return '<a class="ps-ph" href="'+escHtml(u)+'" target="_blank" rel="noopener"><img src="'+escHtml(u)+'" alt="" loading="lazy"></a>'; }).join('');
+      var note = ph.querySelector('.ps-note'); if(note) note.remove();
+      ph.insertAdjacentHTML('afterbegin', html);
+    }
+  });
+}
+document.getElementById('ps-close').addEventListener('click', function(){ document.getElementById('placedlg').close(); });
+document.getElementById('placedlg').addEventListener('click', function(e){ if(e.target === e.currentTarget) e.currentTarget.close(); });
 /* ═══ 액션 ═══ */
 function note(view,msg){
   var b=document.getElementById(view+'-note'); if(!b) return;
