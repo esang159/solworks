@@ -10,7 +10,7 @@ jobs:
           SEC: ${{ secrets.NAVER_SECRET }}
         run: |
           q=$(python3 -c "import urllib.parse;print(urllib.parse.quote('춘천 호수별닭갈비'))")
-          for t in image blog; do
+          for t in image; do
             echo "== $t"
             curl -sS -w "\nHTTP %{http_code}\n" "https://naverapihub.apigw.ntruss.com/search/v1/$t?query=$q&display=3" \
               -H "X-NCP-APIGW-API-KEY-ID: $ID" -H "X-NCP-APIGW-API-KEY: $SEC" | head -c 1600; echo
