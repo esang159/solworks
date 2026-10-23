@@ -1,0 +1,87 @@
+name: 실제 사이트 점검 (여행노트 사진·정보)
+
+# 점검 전용 계정으로 www.solworks.store 에 로그인해서 여행노트 장소 정보 창을 실제 브라우저로 열어 본다.
+# 사진·관광공사 정보가 오는지, 이미지가 실제로 그려지는지 기록하고 화면을 저장한다. (임시)
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 준비
+        run: |
+          pip install --quiet firebase-admin playwright
+          python -m playwright install --with-deps chromium > /dev/null
+      - name: 브라우저로 열어 보기
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          python - <<'PY'
+          import json, os, asyncio, firebase_admin
+          from firebase_admin import auth, credentials
+          from playwright.async_api import async_playwright
+          firebase_admin.initialize_app(credentials.Certificate(json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])))
+          ct = auth.create_custom_token("relay-check").decode()
+          SITE = "https://www.solworks.store"
+          SIGNIN = """async (tok) => {
+            const { firebaseConfig } = await import('/js/firebase-config.js');
+            const A = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+            const U = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+            const app = A.getApps()[0] || A.initializeApp(firebaseConfig);
+            const r = await U.signInWithCustomToken(U.getAuth(app), tok);
+            return r.user.uid;
+          }"""
+
+          async def run(pw, tag, mobile):
+              b = await pw.chromium.launch()
+              ctx = await b.new_context(**(pw.devices["iPhone 13"] if mobile else {"viewport": {"width": 1280, "height": 900}}))
+              p = await ctx.new_page()
+              log = []
+              p.on("console", lambda m: m.type in ("error", "warning") and log.append(f"console.{m.type}: {m.text[:200]}"))
+              p.on("pageerror", lambda e: log.append(f"pageerror: {str(e)[:200]}"))
+              def resp(r):
+                  u = r.url
+                  if "workers.dev" in u or "pstatic" in u or "visitkorea" in u:
+                      log.append(f"{r.status} {u[:150]}")
+              p.on("response", resp)
+              p.on("requestfailed", lambda r: log.append(f"FAILED {r.failure} {r.url[:150]}"))
+              await p.goto(SITE + "/", wait_until="networkidle")
+              print(tag, "로그인:", await p.evaluate(SIGNIN, ct))
+              await p.goto(SITE + "/travel/#/home", wait_until="networkidle")
+              await p.wait_for_timeout(4000)
+              await p.click("#f-spot")
+              await p.wait_for_timeout(2500)
+              cards = p.locator("#fp-spot .placecard")
+              print(tag, "카드 수:", await cards.count(), "| 첫 카드:", (await cards.first.inner_text())[:60].replace("\n", " "))
+              card = cards.first
+              if mobile:
+                  await card.tap(); await p.wait_for_timeout(120); await card.tap()
+              else:
+                  await card.dblclick()
+              await p.wait_for_timeout(7000)
+              print(tag, "정보 창 열림:", await p.evaluate("document.getElementById('placedlg').open"))
+              print(tag, "사진 칸:", await p.evaluate("""() => [...document.querySelectorAll('#ps-photos img')].map(i => (i.complete ? i.naturalWidth : 'loading') + ' ' + i.src.slice(0, 90))"""))
+              print(tag, "사진 칸 글:", (await p.locator("#ps-photos").inner_text())[:100])
+              print(tag, "공식 정보:", (await p.locator("#ps-official").inner_text())[:300].replace("\n", " / "))
+              await p.screenshot(path=f"shot-{tag}.png")
+              print("\n".join(f"  {tag} {l}" for l in log))
+              await b.close()
+
+          async def main():
+              async with async_playwright() as pw:
+                  await run(pw, "PC", False)
+                  await run(pw, "휴대폰", True)
+          asyncio.run(main())
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shots
+          path: shot-*.png

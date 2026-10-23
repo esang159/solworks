@@ -1165,10 +1165,9 @@
   }
 
   /* ═══ 장소 정보 창 ═══ */
-  .pinfo{display:inline-block; font-size:11px; font-weight:700; color:var(--c-move); border:1px solid var(--line-2); border-radius:6px; padding:2px 7px; background:#fff; white-space:nowrap}
-  .pinfo:hover{border-color:var(--c-move); background:var(--c-move-s)}
+  /* 두 번 눌러 정보 창을 열 때 휴대폰이 화면을 확대하지 않게 */
+  .placecard, .blk-b{touch-action:manipulation}
   .placecard .pright{display:flex; flex-direction:column; align-items:flex-end; gap:6px}
-  .opbtn.info{color:var(--c-move); font-weight:600}
   .psheet{border:0; padding:0; background:#fff; color:var(--ink); width:min(460px,100vw); max-width:none; height:100%; max-height:none;
           margin:0 0 0 auto; border-radius:0; box-shadow:-12px 0 40px rgba(20,28,24,.25); display:none; flex-direction:column}
   .psheet[open]{display:flex}
@@ -4110,8 +4109,8 @@ function renderPlaces(panel, key){
   var picked = picksFor(cityName)[kind];
   var bar=el('div','placebar');
   var cnt=el('span','psel');
-  cnt.innerHTML = picked.length ? ('<b>'+picked.length+'곳</b> 선택됨 · 생성하면 일정에 들어갑니다')
-                                : '가고 싶은 곳을 눌러 표시해 두세요 · 생성할 때 일정에 넣습니다';
+  cnt.innerHTML = picked.length ? ('<b>'+picked.length+'곳</b> 선택됨 · 두 번 누르면 사진·정보')
+                                : '가고 싶은 곳을 눌러 표시 · 두 번 누르면 사진·정보';
   bar.appendChild(cnt);
   var KINDWORD = {spot:'관광지', food:'음식점', stay:'숙소'};
   var recBtn=el('button','prec','추천으로 고르기'); recBtn.type='button';
@@ -4228,23 +4227,25 @@ function renderPlaces(panel, key){
       '<span class="ptags">'+(x.tags||[]).map(function(t){ return '<span>#'+t+'</span>'; }).join('')+
       (extra?'<span class="pdur">'+extra+'</span>':'')+'</span></span>'+
       '<span class="pright"><span class="pprice">'+price+'</span>'+
-      '<span class="pinfo" role="button" tabindex="0" aria-label="'+escHtml(x.n)+' 사진·정보">사진·정보</span>'+
       '<span class="pcheck" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none"><path d="M5 12.5 10 17l9-9.5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>';
     card.addEventListener('mouseenter', function(){ active=i; placeActive[key]=i; paint(); });
     card.addEventListener('focus', function(){ active=i; placeActive[key]=i; paint(); });
-    card.addEventListener('click', function(e){
-      if(e.target.closest('.pinfo')){
-        openPlaceInfo(x, {kind: kind, city: cityName, picked: isPicked(cityName, kind, x.n), onPick: function(){ card.click(); }});
-        return;
-      }
+    card.title = '두 번 누르면 사진·정보';
+    card.addEventListener('click', function(){
+      /* 두 번 누르면 정보 창. 두 번째 누름이 첫 번째 선택을 되돌리므로 선택은 그대로 남는다 */
+      var now = Date.now(), dbl = now - (card._tap || 0) < 380;
+      card._tap = dbl ? 0 : now;
+      if(dbl) setTimeout(function(){
+        openPlaceInfo(x, {kind: kind, city: cityName, picked: isPicked(cityName, kind, x.n), onPick: function(){ card._tap = 0; card.click(); }});
+      }, 0);
       var nowOn = togglePick(cityName, kind, x.n);
       card.classList.toggle('picked', nowOn);
       card.setAttribute('aria-pressed', nowOn?'true':'false');
       renderSummary();
       var c=panel.querySelector('.psel');
       var n=picksFor(cityName)[kind].length;
-      if(c) c.innerHTML = n ? ('<b>'+n+'곳</b> 선택됨 · 생성하면 일정에 들어갑니다')
-                            : '가고 싶은 곳을 눌러 표시해 두세요 · 생성할 때 일정에 넣습니다';
+      if(c) c.innerHTML = n ? ('<b>'+n+'곳</b> 선택됨 · 두 번 누르면 사진·정보')
+                            : '가고 싶은 곳을 눌러 표시 · 두 번 누르면 사진·정보';
       if(!panel.querySelector('.pclear') && n){
         var b2=el('button','pclear','선택 해제'); b2.type='button';
         b2.addEventListener('click', function(){ picksFor(cityName)[kind]=[]; save(); renderTiles(key); renderSummary(); });
@@ -5135,14 +5136,6 @@ function buildDays(container){
       var memoText = itemMemo(day.no, it);
       var mb=el('button','opbtn memo' + (memoText ? ' has' : ''), '메모');
       mb.type='button'; mb.title='이 일정에 메모'; mb.setAttribute('aria-label', it.n+' 메모');
-      if(it.lat!=null && (it.cat==='spot' || it.cat==='food' || it.cat==='stay')){
-        var ib=el('button','opbtn info','정보');
-        ib.type='button'; ib.title='사진·정보'; ib.setAttribute('aria-label', it.n+' 사진·정보');
-        ib.addEventListener('click', function(){
-          openPlaceInfo({n: it.n.replace(/ (체크인|복귀)$/,''), lat: it.lat, lng: it.lng, s: it.s, url: it.url}, {city: TRIP && TRIP.cityName});
-        });
-        hd.appendChild(ib);
-      }
       hd.appendChild(mb);
       hd.appendChild(grip); hd.appendChild(rm);
       li.appendChild(hd);
@@ -5202,10 +5195,19 @@ function buildDays(container){
       mb.addEventListener('click', editMemo);
       showMemo();
 
+      /* 한 번 누르면 고치기. 장소 블록은 두 번 누르면 사진·정보 — 그래서 고치기 창은 잠깐 기다렸다 연다 */
+      var isPlace = it.lat!=null && (it.cat==='spot' || it.cat==='food' || it.cat==='stay');
+      if(isPlace) bd.title = '눌러서 고치기 · 두 번 누르면 사진·정보';
       bd.addEventListener('click', function(e){
         if(e.target.closest('button')) return;
         if(dragMoved) return;
-        openEdit(it.id);
+        if(!isPlace){ openEdit(it.id); return; }
+        if(bd._tap){
+          clearTimeout(bd._tap); bd._tap = 0;
+          openPlaceInfo({n: it.n.replace(/ (체크인|복귀)$/,''), lat: it.lat, lng: it.lng, s: it.s, url: it.url}, {city: TRIP && TRIP.cityName});
+          return;
+        }
+        bd._tap = setTimeout(function(){ bd._tap = 0; openEdit(it.id); }, 300);
       });
       bd.style.cursor='pointer';
       li.addEventListener('pointerdown', function(e){
