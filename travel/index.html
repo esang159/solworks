@@ -6143,10 +6143,12 @@ function openPlaceInfo(x, opt){
   relayGet('/naver/image', {q: q}).then(function(d){
     var box = document.getElementById('ps-photos'); if(!box || document.getElementById('ps-title').textContent !== x.n) return;
     var items = (d && d.items) || [];
-    if(!items.length){ box.innerHTML = '<p class="ps-note">사진을 찾지 못했어요</p>'; return; }
-    box.innerHTML = items.map(function(m){
+    /* 관광공사 사진이 먼저 와서 붙어 있을 수 있으니 덮어쓰지 않고 뒤에 붙인다 */
+    var wait = box.querySelector('.ps-note'); if(wait) wait.remove();
+    if(!items.length){ if(!box.querySelector('.ps-ph')) box.innerHTML = '<p class="ps-note">사진을 찾지 못했어요</p>'; return; }
+    box.insertAdjacentHTML('beforeend', items.map(function(m){
       return '<a class="ps-ph" href="'+escHtml(m.src)+'" target="_blank" rel="noopener"><img src="'+escHtml(m.thumb)+'" alt="" loading="lazy" referrerpolicy="no-referrer"></a>';
-    }).join('');
+    }).join(''));
     Array.prototype.forEach.call(box.querySelectorAll('img'), function(im){
       im.addEventListener('error', function(){ im.parentNode.remove(); });
     });
@@ -6162,7 +6164,7 @@ function openPlaceInfo(x, opt){
     box.innerHTML =
       '<dl class="ps-dl">'+rows.map(function(r){ return '<dt>'+escHtml(r[0])+'</dt><dd>'+escHtml(r[1]).replace(/\n/g,'<br>')+'</dd>'; }).join('')+'</dl>'+
       (d.overview ? '<p class="ps-over">'+escHtml(d.overview)+'</p>' : '')+
-      '<p class="ps-src">정보 출처: 한국관광공사</p>';
+      '<p class="ps-src">정보 출처: 한국관광공사'+(d.title && d.title.replace(/\s/g,'') !== x.n.replace(/\s/g,'') ? ' · '+escHtml(d.title) : '')+'</p>';
     /* 관광공사 사진이 있으면 앞에 붙인다 */
     var ph = document.getElementById('ps-photos');
     if(ph && d.images && d.images.length){

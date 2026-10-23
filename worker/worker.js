@@ -160,7 +160,9 @@ async function tourInfo(url, env) {
   ]);
   const c = (com.items && com.items[0]) || {};
   const ii = (intro.items && intro.items[0]) || {};
-  const info = (INTRO[type] || []).map(([k, label]) => [label, strip2(ii[k])]).filter((p) => p[1]);
+  // 관광공사 글은 "…16:00)[3월~5월]…" 처럼 줄바꿈 없이 붙어 오는 게 많아 [ 와 ※ 앞에서 줄을 바꾼다
+  const lines = (v) => strip2(v).replace(/([^\n\s])\s*(?=\[|※)/g, "$1\n").replace(/\n{2,}/g, "\n");
+  const info = (INTRO[type] || []).map(([k, label]) => [label, lines(ii[k])]).filter((p) => p[1]);
   const images = [it.firstimage, ...((img.items || []).map((m) => m.originimgurl))].filter(Boolean)
     .map((u) => u.replace(/^http:/, "https:"));
   return { status: 200, body: {
@@ -193,7 +195,7 @@ export default {
     if (url.pathname === "/naver/image" || url.pathname === "/tour/info") {
       if (!(await userOf(req, env))) return json({ error: "login" }, 401, cors);
       const cache = caches.default;
-      const key = new Request(url.origin + url.pathname + "/v2" + url.search);   // 고르는 방식이 바뀌면 v 를 올린다
+      const key = new Request(url.origin + url.pathname + "/v3" + url.search);   // 고르는 방식이 바뀌면 v 를 올린다
       let hit = await cache.match(key);
       if (!hit) {
         const out = url.pathname === "/naver/image" ? await naverImage(url, env) : await tourInfo(url, env);
