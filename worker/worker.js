@@ -138,10 +138,19 @@ async function tourInfo(url, env) {
   if (!name) return { status: 400, body: { error: "query" } };
   const s = await tourGet("searchKeyword2", { keyword: name, numOfRows: "20", arrange: "A" }, env);
   if (s.error) return { status: 502, body: { error: "tour", detail: s.error } };
+  // 이름이 같은 것 > 이름으로 시작하는 것 > 이름이 들어간 것 순으로 고른다.
+  // 그냥 가까운 것만 고르면 "남이섬"에 남이섬 노래박물관, "경복궁"에 경복궁 생과방(행사)이 잡힌다.
+  const norm = (t) => String(t || "").replace(/\([^)]*\)|\[[^\]]*\]/g, "").replace(/\s+/g, "").toLowerCase();
+  const want = norm(name);
   const near = s.items
-    .map((x) => ({ x, d: (at.lat && x.mapy) ? km(at, { lat: +x.mapy, lng: +x.mapx }) : 99 }))
-    .filter((o) => o.d <= 1.5)
-    .sort((a, b) => a.d - b.d)[0];
+    .map((x) => {
+      const t = norm(x.title), d = (at.lat && x.mapy) ? km(at, { lat: +x.mapy, lng: +x.mapx }) : 99;
+      const rank = t === want ? 0 : t.startsWith(want) ? 1 : t.includes(want) ? 2 : 3;
+      return { x, d, rank, len: t.length };
+    })
+    // 넓은 곳(섬·궁궐)은 좌표가 조금 달라도 이름이 같으면 받아 준다. 행사(15)는 이름이 같을 때만
+    .filter((o) => o.d <= (o.rank === 0 ? 5 : 1.5) && (String(o.x.contenttypeid) !== "15" || o.rank === 0))
+    .sort((a, b) => a.rank - b.rank || a.len - b.len || a.d - b.d)[0];
   if (!near) return { status: 200, body: { found: false } };
   const it = near.x, id = it.contentid, type = String(it.contenttypeid || "");
   const [com, intro, img] = await Promise.all([
@@ -184,7 +193,7 @@ export default {
     if (url.pathname === "/naver/image" || url.pathname === "/tour/info") {
       if (!(await userOf(req, env))) return json({ error: "login" }, 401, cors);
       const cache = caches.default;
-      const key = new Request(url.origin + url.pathname + url.search);
+      const key = new Request(url.origin + url.pathname + "/v2" + url.search);   // 고르는 방식이 바뀌면 v 를 올린다
       let hit = await cache.match(key);
       if (!hit) {
         const out = url.pathname === "/naver/image" ? await naverImage(url, env) : await tourInfo(url, env);

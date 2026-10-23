@@ -69,7 +69,7 @@ jobs:
           print("health:", requests.get(base + "/health", timeout=20).text)
           o = requests.get(base + "/odsay/path", params={"sx": 126.9707, "sy": 37.5547, "ex": 126.9770, "ey": 37.5788}, headers={"Authorization": "Bearer " + tok, "Origin": "https://www.solworks.store"}, timeout=30)
           print("[ODsay 서울역→경복궁] HTTP", o.status_code, o.text[:200])
-          for path, params in [("/naver/image", {"q": "춘천 호수별닭갈비"}), ("/tour/info", {"name": "남이섬", "lat": 37.7906, "lng": 127.5256}), ("/tour/info", {"name": "경복궁", "lat": 37.5788, "lng": 126.977})]:
+          for path, params in [("/naver/image", {"q": "춘천 호수별닭갈비"}), ("/tour/info", {"name": "남이섬", "lat": 37.7906, "lng": 127.5256}), ("/tour/info", {"name": "경복궁", "lat": 37.5788, "lng": 126.977}), ("/tour/info", {"name": "국립중앙박물관", "lat": 37.5239, "lng": 126.9803})]:
               x = requests.get(base + path, params=params, headers={"Authorization": "Bearer " + tok, "Origin": "https://www.solworks.store"}, timeout=40)
               print(f"[{path} {params}] HTTP {x.status_code}", x.text[:900])
           for q in ["춘천역 맛집", "경복궁"]:
