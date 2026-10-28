@@ -38,6 +38,7 @@ const state = {
   notes: store.get("notes", null),   // 포스트잇 {id, text, color, updated}
   notices: [],
   noticeMeta: {},
+  nTags: new Set(store.get("nTags", [])),   // 사업공고 해시태그 필터
   cal: { year: 0, month: 0, selected: "" },
 };
 
@@ -347,6 +348,9 @@ function renderNotices() {
     list = Object.entries(state.noticeMemos).map(([id, m]) =>
       findNotice(id) || { id, title: m.title, url: m.url, end: m.end, kind: m.kind, source: "", regions: [] });
   }
+  // 해시태그: 지금 조건에서 태그별 개수를 보여 주고, 고른 태그 중 하나라도 붙은 공고만 남긴다
+  renderTagFilter(list);
+  if (state.nTags.size) list = list.filter((n) => (n.matched || []).some((k) => state.nTags.has(k)));
   if (sort === "deadline") list.sort((a, b) => (a.end || "9999").localeCompare(b.end || "9999"));
   else list.sort(byNewest);
 
@@ -398,7 +402,7 @@ function noticeCardHTML(n) {
       </div>
       <div class="nc-foot">
         <span>등록 ${md(regDate(n))}</span><span>접수 ${md(n.start)} ~ ${md(n.end)}</span>
-        ${(n.matched || []).map((k) => `<span class="nc-hash">#${esc(k)}</span>`).join("")}
+        ${(n.matched || []).map((k) => `<button type="button" class="nc-hash${state.nTags.has(k) ? " on" : ""}" data-tag="${esc(k)}" title="#${esc(k)} 공고만 보기">#${esc(k)}</button>`).join("")}
         <span class="grow"></span>
         <button class="ghost" data-memo="${esc(n.id)}">${state.noticeMemos[n.id] ? "메모 수정" : "메모 추가"}</button>
       </div>
@@ -435,6 +439,32 @@ $("#nPer").addEventListener("input", () => store.set("nPer", Number($("#nPer").v
 // 조건을 바꾸면 첫 페이지로
 ["#nSearch", "#nSource", "#nRegion", "#nFilter", "#nSort", "#nPer"].forEach((s) =>
   $(s).addEventListener("input", () => { state.nPage = 1; renderNotices(); }));
+
+// 해시태그 필터 (#수출 등). 여러 개 고르면 그중 하나라도 붙은 공고
+function renderTagFilter(list) {
+  const cnt = {};
+  for (const n of state.notices) for (const k of n.matched || []) cnt[k] ||= 0;
+  for (const n of list) for (const k of n.matched || []) cnt[k] = (cnt[k] || 0) + 1;
+  const tags = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || a.localeCompare(b));
+  $("#nTags").hidden = !tags.length;
+  $("#nTags").innerHTML = tags.length ? `<button type="button" class="${state.nTags.size ? "" : "on"}" data-tag="">전체</button>` +
+    tags.map((k) => `<button type="button" class="${state.nTags.has(k) ? "on" : ""}" data-tag="${esc(k)}" aria-pressed="${state.nTags.has(k)}">#${esc(k)} <span class="cnt">${cnt[k]}</span></button>`).join("") : "";
+}
+function toggleTag(k) {
+  if (!k) state.nTags.clear();
+  else if (state.nTags.has(k)) state.nTags.delete(k);
+  else state.nTags.add(k);
+  store.set("nTags", [...state.nTags]);
+  state.nPage = 1;
+  renderNotices();
+}
+$("#nTags").addEventListener("click", (e) => { const b = e.target.closest("[data-tag]"); if (b) toggleTag(b.dataset.tag); });
+$("#nList").addEventListener("click", (e) => {
+  const b = e.target.closest(".nc-hash[data-tag]");
+  if (!b) return;
+  toggleTag(b.dataset.tag);
+  $("#nTags").scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
 
 function kindBadge(n) {
   const k = n.kind || "지원사업";

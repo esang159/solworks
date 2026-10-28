@@ -262,7 +262,22 @@ button.icon { background: none; color: var(--muted); padding: 2px 6px; }
 }
 .nc-foot .grow { flex: 1; }
 .nc-foot button { font-size: 12px; padding: 4px 10px; }
-.nc-hash { color: var(--accent); }
+.nc-hash { color: var(--accent); background: none; border: 0; padding: 2px 4px; margin: -2px -4px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.nc-hash:hover, .nc-hash.on { background: var(--accent-soft); }
+#pList .nc-hash { pointer-events: none; }
+/* 해시태그 필터: 넘치면 옆으로 넘긴다 (휴대폰) */
+.tag-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.tag-filter button {
+  font-size: 13px; padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+  background: transparent; color: var(--muted); border: 1px solid var(--line);
+}
+.tag-filter button .cnt { font-size: 11px; opacity: .75; font-variant-numeric: tabular-nums; }
+.tag-filter button.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.tag-filter button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (max-width: 600px) {
+  .tag-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -2px; padding: 0 2px 2px; }
+  .tag-filter::-webkit-scrollbar { display: none; }
+}
 .star {
   background: none; color: var(--muted); padding: 3px; border-radius: 6px; line-height: 0;
   display: inline-flex; align-items: center; justify-content: center;
